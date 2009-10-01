@@ -1,0 +1,5 @@
+FE527340	Test	cDNA_match	22	33	0	-	.	ID=FE527340
+# Comment goes here
+
+# With a newline in between
+I	Test	cDNA_match	9949430	9949450	0	-	.	ID=foobar;Target=FE527340 255 614

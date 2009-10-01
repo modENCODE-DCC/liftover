@@ -1,0 +1,4 @@
+track type=wiggle_0 name="HTZIP2" description="HTZ-1 IP replicate 1"
+fixedStep chrom=I start=9949430 span=50 step=20
+1.4
+1.5
