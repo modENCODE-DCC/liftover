@@ -58,9 +58,7 @@ public class WIGUpdater extends AbstractUpdater {
 				} else {
 					if (line.matches("^\\s*track .*")) {
 						writer.write(line);
-						writer.newLine();
-						line = reader.readLine(); // Read definition line
-						
+					} else {
 						String fields[] = line.split("\\s+");
 
 						// Track header; parse then write original
@@ -81,13 +79,11 @@ public class WIGUpdater extends AbstractUpdater {
 							line = line.replaceAll("(start=\\d+\\s*)|(step=\\d+\\s*)", "");
 							writer.write(line);
 						} else {
-							throw new MappingException("Unknown WIG type in line: " + line);
+							if (lineParser == null) {
+								throw new MappingException("Wiggle parser unsure of type reading line " + line);
+							}
+							writer.write(lineParser.processLine(line).toString());
 						}
-					} else {
-						if (lineParser == null) {
-							throw new MappingException("Wiggle parser unsure of type reading line " + line);
-						}
-						writer.write(lineParser.processLine(line).toString());
 					}
 				}
 				writer.newLine();
