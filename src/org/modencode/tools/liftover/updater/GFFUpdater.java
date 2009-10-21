@@ -48,9 +48,13 @@ public class GFFUpdater extends AbstractUpdater {
 			throw new MappingException("Couldn't open " + outFile + " for writing", e);
 		}
 		
+		long fileSize =  gffFile.length();
+		long bytesProcessed = 0;
 		try {
 			String line;
 			while ((line = reader.readLine()) != null) {
+				bytesProcessed += line.length()+1;
+				this.updateProgress(bytesProcessed/(double)fileSize);
 				if (line.matches("^\\s*$") || line.matches("^\\s*#.*")) {
 					writer.write(line); // Comment or blank line
 				} else {
@@ -112,9 +116,9 @@ public class GFFUpdater extends AbstractUpdater {
 			res += "\t";
 			if (type != null) res += this.type; else res += ".";
 			res += "\t";
-			if (start > 0) res += this.start; else res += ".";
+			if (start != null && start > 0) res += this.start; else res += ".";
 			res += "\t";
-			if (end > 0) res += this.end; else res += ".";
+			if (end != null && end > 0) res += this.end; else res += ".";
 			res += "\t";
 			if (score != null) res += this.score; else res += ".";
 			res += "\t";

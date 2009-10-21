@@ -9,10 +9,18 @@ import org.modencode.tools.liftover.MappingException;
 public class AbstractUpdater {
 	protected List<MappingData> mappingData;
 	private boolean verbose = false;
-
+	private long lastProgress;
 	
 	public AbstractUpdater(List<MappingData> mappingData) {
 		this.mappingData = mappingData;
+	}
+	
+	protected void updateProgress(double fractionProgress) {
+		long progress = Math.round(fractionProgress*100);
+		if (progress % 10 == 0 && lastProgress != progress) {
+			lastProgress = progress; 
+			System.out.println("Completed " + progress + "%.");
+		}
 	}
 
 	public AbstractFeature updateFeature(AbstractFeature f) throws MappingException {
