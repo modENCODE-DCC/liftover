@@ -845,4 +845,49 @@ public class TestSAMUpdater {
 		}
 		writer.close();
 	}
+	@Test
+	public void testSimpleDeleteWholeReadAndWholeMate() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949429, 9949551, 122, 9949429, 9949429, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (oldF.isFirstRead()) {
+				assertEquals("Read is still mapped to a reference sequence, even though we unmapped the whole read", "*", f.getChromosome());
+				assertEquals("Didn't set read start to zero even though we unmapped the whole read", 0, f.getStart().intValue());
+				assertEquals("Cigar string still exists, even though we unmapped the whole read", "*", f.getCigar().toString());
+				assertEquals("Didn't set ISIZE to zero even though we deleted the whole read and mate", 0, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't set mate start to 0 even though we deleted the whole read and mate", 0, f.getMateStart().intValue());
+				assertTrue("Didn't set read-unmapped flag even though we deleted the whole read", f.getReadUnmapped());
+				assertTrue("Didn't set read-unmapped flag even though we deleted the whole mate", f.getMateUnmapped());
+				assertFalse("This should be impossible, read is second read?", f.isSecondRead());
+				assertFalse("Read is still listed as \"first\" read, even though it's unmapped", f.isFirstRead());
+			} else {
+				assertEquals("For mate: Didn't set start to zero even though we deleted the whole mate and read", 0, f.getStart().intValue());
+				assertEquals("For mate: Didn't set end to zero even though we deleted the whole mate and read", 0, f.getEnd().intValue());
+				assertEquals("For mate: Didn't set read start to zero even though we deleted the whole mate and read", 0, f.getMateStart().intValue());
+				assertEquals("For mate: Didn't set ISIZE to zero though we deleted the whole mate and read", 0, f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Didn't set cigar string to * even though we deleted the whole mate and read", "*", f.getCigar().toString());				
+				assertTrue("For mate: Still have mapping of mate even though we deleted the whole mate and read", f.getReadUnmapped());
+				assertTrue("For mate: Still have mapping of read even though we deleted the whole mate and read", f.getMateUnmapped());
+				assertFalse("For mate: This should be impossible; mate is first read?!!", f.isFirstRead());
+				assertFalse("For mate: Mate is still listed as \"second\" read, even though we deleted the whole mate and read", f.isSecondRead());
+			}
+		}
+		writer.close();
+	}
 }
