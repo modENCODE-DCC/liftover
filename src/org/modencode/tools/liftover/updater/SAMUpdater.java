@@ -56,6 +56,7 @@ public class SAMUpdater extends AbstractUpdater {
 					int orig_end = f.getEnd();
 					int orig_mate_start = f.getMateStart();
 					int orig_mate_end = 0;
+					String orig_ref_seq = f.getChromosome();
 					if (f.getStart() < f.getMateStart()) {
 						orig_mate_end = f.getMateEnd();
 					}
@@ -63,6 +64,13 @@ public class SAMUpdater extends AbstractUpdater {
 						// The start is past the end of the mismatch, so just shift the start right
 						// by the difference in length of the old and new regions
 						f.setStart(f.getStart() + (mm.thisMismatch.length - mm.previousMismatch.length));
+					} else if (f.getStart() >= mm.previousMismatch.start && f.getEnd() <= mm.previousMismatch.end && mm.thisMismatch.length < mm.previousMismatch.length) {
+						// Deleted the whole read
+						f.setInferredInsertSize(0);
+						f.setChromosome("*");
+						f.setStart(0);
+						f.setCigar(new Cigar());
+						f.setReadUnmapped(true);
 					} else if (f.getStart() >= mm.previousMismatch.start && (f.getStart() - mm.previousMismatch.start) > mm.thisMismatch.length) {
 						// The start was somewhere inside the changed region and is now outside because the new region is smaller,
 						// so lock the start to the end of the new region (it's really somewhere between the last base of the new region
@@ -72,7 +80,7 @@ public class SAMUpdater extends AbstractUpdater {
 
 					// What about the mate?
 					if (f.isPaired() && !f.getMateUnmapped()) {
-						if (f.getMateChromosome() != f.getChromosome()) {
+						if (f.getMateChromosome() != orig_ref_seq) {
 							// TODO: Deal with remapping mates on different chromosomes
 							throw new RuntimeException("Can't yet deal with remapping mate on another chromosome");
 						} else {
@@ -88,6 +96,7 @@ public class SAMUpdater extends AbstractUpdater {
 									f.setMateStart(0);
 									f.setInferredInsertSize(0);
 									f.setMateUnmapped(true);
+									// TODO: Set not first read
 								} else {
 									// We know both ends of the mate, and so it's not ambiguous. Instead,
 									// lock the beginning of the mate to the beginning/end of the deleted region
@@ -112,7 +121,7 @@ public class SAMUpdater extends AbstractUpdater {
 										// Mate before read; add -shift to isize
 										f.setInferredInsertSize(f.getInferredInsertSize() + (-shift));
 									}
-								} else if (orig_start < orig_mate_start && mm.previousMismatch.start < orig_start && mm.previousMismatch.end > orig_start) {
+								} else if (orig_start < orig_mate_start && mm.previousMismatch.start < orig_start && mm.previousMismatch.end > orig_start && f.getChromosome() != "*") {
 									int offset = mm.previousMismatch.start - orig_start;
 									int shift = mm.thisMismatch.length - mm.previousMismatch.length;
 									if (offset < 0) {
@@ -172,7 +181,7 @@ public class SAMUpdater extends AbstractUpdater {
 							}
 							f.setCigar(newCigar);
 						}
-					} else if (orig_end < mm.previousMismatch.end && orig_end >= mm.previousMismatch.start) {
+					} else if (orig_end < mm.previousMismatch.end && orig_end >= mm.previousMismatch.start && orig_start < mm.previousMismatch.start) {
 						if (mm.previousMismatch.length != mm.thisMismatch.length) {
 							int offset = mm.previousMismatch.start - orig_start;
 							int length = mm.previousMismatch.length - mm.thisMismatch.length;
@@ -250,8 +259,12 @@ public class SAMUpdater extends AbstractUpdater {
 				cigarExtender.append(elem.getOperator());
 		}
 		String extendedCigar = cigarExtender.toString();
+		if (extendedCigar == "*") { extendedCigar = ""; }
 		if (position > extendedCigar.length()) {
 			throw new IndexOutOfBoundsException("Can't delete from cigar string at or past the end of the original cigar (" + position + " > " + extendedCigar.length() + ")");
+		}
+		if (position < 0) {
+			throw new IllegalArgumentException("Can't delete from cigar with offset < 0!");
 		}
 		int curOpLength = 1;
 		int iRelativeToReference = 0;
@@ -322,6 +335,9 @@ public class SAMUpdater extends AbstractUpdater {
 		}
 		public String getChromosome() {
 			return thisRecord.getReferenceName();
+		}
+		public void setChromosome(String referenceName) {
+			thisRecord.setReferenceName(referenceName);
 		}
 		public Integer getStart() {
 			return thisRecord.getAlignmentStart();
@@ -395,6 +411,9 @@ public class SAMUpdater extends AbstractUpdater {
 		}
 		public boolean getReadUnmapped() {
 			return thisRecord.getReadUnmappedFlag();
+		}
+		public void setReadUnmapped(boolean isUnmapped) {
+			thisRecord.setReadUmappedFlag(isUnmapped);
 		}
 		public boolean isPaired() {
 			return thisRecord.getReadPairedFlag();

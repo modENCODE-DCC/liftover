@@ -636,19 +636,23 @@ public class TestSAMUpdater {
 			}
 			f = (SAMFeature)updater.updateFeature(f);
 			if (oldF.isFirstRead()) {
-				assertNull("Still have a read object even though we deleted the whole read", f);
+				assertEquals("Read is still mapped to a reference sequence, even though we unmapped the whole read", "*", f.getChromosome());
+				assertEquals("Read start is nonzero, even though we unmapped the whole read", 0, f.getStart().intValue());
+				assertEquals("Cigar string still exists, even though we unmapped the whole read", "*", f.getCigar().toString());
+				assertEquals("Didn't set ISIZE to zero even though we deleted the whole read", 0, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate start 52 to the left even though we deleted the whole read and surrounding 2 bases", oldF.getMateStart().intValue()-52, f.getMateStart().intValue());
+				assertTrue("Didn't set read-unmapped flag even though we deleted the whole read", f.getReadUnmapped());
+				assertTrue("This should be impossible, read is second read?", f.isSecondRead());
+				assertTrue("Read is still listed as \"first\" read, even though it's unmapped", f.isFirstRead());
 			} else {
-				assertEquals("For mate: Didn't move mate start 52 to the let even though deleted read and surrounding 2 bases", oldF.getStart().intValue() - 52, f.getStart().intValue());
+				assertEquals("For mate: Didn't move mate start 52 to the left even though deleted read and surrounding 2 bases", oldF.getStart().intValue() - 52, f.getStart().intValue());
 				assertEquals("For mate: Didn't move mate end 52 to the left even though deleted read and surrounding 2 bases", oldF.getEnd()-52, f.getEnd().intValue());
 				assertEquals("For mate: Didn't set read start to zero even though deleted whole read", 0, f.getMateStart().intValue());
-				assertEquals("For mate: Didn't set ISIZE to zero though deleted whole read", oldF.getInferredInsertSize().intValue()-(-1), f.getInferredInsertSize().intValue());
-				assertEquals("For mate: Cigar string for mate didn't change even though deleted two surrounding end of mate", "49M1I", f.getCigar().toString());				
+				assertEquals("For mate: Didn't set ISIZE to zero though deleted whole read", 0, f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string for mate changed even though just deleted whole read", oldF.getCigar().toString(), f.getCigar().toString());				
 				assertTrue("For mate: Still have mapping of read even though deleted whole read", f.getMateUnmapped());
 				assertFalse("For mate: This should be impossible; mate is first read?!!", oldF.isFirstRead());
 				assertFalse("For mate: Mate is still listed as \"second\" read, even though the first read was deleted", oldF.isSecondRead());
-			}
-			if (f != null) {
-				writer.addAlignment(r);
 			}
 		}
 		writer.close();
