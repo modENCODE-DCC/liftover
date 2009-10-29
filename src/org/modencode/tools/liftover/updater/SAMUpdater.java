@@ -2,7 +2,6 @@ package org.modencode.tools.liftover.updater;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import net.sf.samtools.Cigar;
@@ -71,6 +70,8 @@ public class SAMUpdater extends AbstractUpdater {
 						f.setStart(0);
 						f.setCigar(new Cigar());
 						f.setReadUnmapped(true);
+						f.setFirstRead(false);
+						f.setSecondRead(false);
 					} else if (f.getStart() >= mm.previousMismatch.start && (f.getStart() - mm.previousMismatch.start) > mm.thisMismatch.length) {
 						// The start was somewhere inside the changed region and is now outside because the new region is smaller,
 						// so lock the start to the end of the new region (it's really somewhere between the last base of the new region
@@ -96,11 +97,22 @@ public class SAMUpdater extends AbstractUpdater {
 									f.setMateStart(0);
 									f.setInferredInsertSize(0);
 									f.setMateUnmapped(true);
-									// TODO: Set not first read
+									f.setFirstRead(false);
+									f.setSecondRead(false);
 								} else {
-									// We know both ends of the mate, and so it's not ambiguous. Instead,
-									// lock the beginning of the mate to the beginning/end of the deleted region
-									f.setMateStart(mm.previousMismatch.start + mm.thisMismatch.length);
+									// We know both ends of the mate, and so it's not ambiguous.
+									if (mm.previousMismatch.start <= orig_mate_start && mm.previousMismatch.end >= orig_mate_end) {
+										// We deleted the whole mate!
+										f.setMateStart(0);
+										f.setInferredInsertSize(0);
+										f.setMateUnmapped(true);
+										f.setFirstRead(false);
+										f.setSecondRead(false);
+									} else {
+										// We deleted across the start of the mate, so we want to lock the start
+										// to the edge of the deleted region
+										f.setMateStart(mm.previousMismatch.start + mm.thisMismatch.length);
+									}
 								}
 							}
 							if (mm.previousMismatch.length != mm.thisMismatch.length && !f.getMateUnmapped()) { 
@@ -147,7 +159,8 @@ public class SAMUpdater extends AbstractUpdater {
 										// Mate before read; add -shift to isize
 										f.setInferredInsertSize(f.getInferredInsertSize() + (-shift));
 									}									
-								} else if (orig_start > orig_mate_start && mm.previousMismatch.start <= orig_end && mm.previousMismatch.end > orig_end) {
+								} else if (orig_start > orig_mate_start && (f.isFirstRead() || f.isSecondRead()) && mm.previousMismatch.start <= orig_end && mm.previousMismatch.end > orig_end) {
+									// Deleted end of read
 									int length = mm.thisMismatch.length - mm.previousMismatch.length;
 									length = length - (-((mm.previousMismatch.end-1) - orig_end));
 									f.setInferredInsertSize(f.getInferredInsertSize() - length);
@@ -193,7 +206,8 @@ public class SAMUpdater extends AbstractUpdater {
 					}
 					// ... of the mate
 					// Only applies if we're looking at a change to the mate from the perspective of the read
-					if (orig_start < orig_mate_start) {
+					// (and we haven't deleted the whole mate)
+					if (orig_start < orig_mate_start && (f.isFirstRead() || f.isSecondRead())) {
 						if (orig_mate_end < mm.previousMismatch.end && orig_mate_end >= mm.previousMismatch.start) {
 							int length = mm.previousMismatch.length - mm.thisMismatch.length;
 							length = length - ((mm.previousMismatch.end-1) - orig_mate_end);
@@ -420,6 +434,12 @@ public class SAMUpdater extends AbstractUpdater {
 		}
 		public boolean isFirstRead() {
 			return thisRecord.getFirstOfPairFlag();
+		}
+		public void setFirstRead(boolean isFirstRead) {
+			thisRecord.setFirstOfPairFlag(isFirstRead);
+		}
+		public void setSecondRead(boolean isSecondRead) {
+			thisRecord.setSecondOfPairFlag(isSecondRead);
 		}
 		public boolean isSecondRead() {
 			return thisRecord.getSecondOfPairFlag();
