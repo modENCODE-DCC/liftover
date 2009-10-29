@@ -72,6 +72,11 @@ public class TestSAMCigarUpdates {
 		c = su.updateCigarForDeletedReference(c, 4, 2);
 		System.out.println(cigarToString(c));
 		assertEquals("Couldn't delete 1M1D near beginning of cigar string", "4M1I4D5I5M", cigarToString(c));
+
+		c = new Cigar(testElements);
+		c = su.updateCigarForDeletedReference(c, 0, 1);
+		System.out.println(cigarToString(c));
+		assertEquals("Couldn't delete 1M at beginning of cigar string", "1I4M5D5I5M", cigarToString(c));
 	}
 
 	private String cigarToString(Cigar c) {

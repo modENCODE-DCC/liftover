@@ -17,7 +17,7 @@ import org.modencode.tools.liftover.updater.SAMUpdater;
 import org.modencode.tools.liftover.updater.SAMUpdater.SAMFeature;
 
 /*
- * All tests run on this wiggle file:
+ * All tests run on this SAM file:
 @HD	VN:1.0
 @SQ	SN:I	LN:9999999
 read_pair_001	67	I	9949430	255	50M	=	9949500	120	AACTGAATCAGTGCATGAGGATATGCCATTAATTCGTCTGAAAGGAGTTG	*
@@ -326,13 +326,13 @@ public class TestSAMUpdater {
 				assertEquals("Didn't move read end two to the right even though insert was inside read", oldF.getEnd()+2, f.getEnd().intValue());
 				assertEquals("Didn't move mate start even though insert was inside read", oldF.getMateStart()+2, f.getMateStart().intValue());
 				assertEquals("Didn't move mate end even though insert was inside read", oldF.getMateEnd()+2, f.getMateEnd().intValue());
-				assertEquals("Didn't change ISIZE even though insert was after read and mate", oldF.getInferredInsertSize().intValue()+2, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't change ISIZE even though insert was inside read", oldF.getInferredInsertSize().intValue()+2, f.getInferredInsertSize().intValue());
 				assertEquals("Cigar string didn't change even though insert was inside read", "10M2D40M", f.getCigar().toString());
 			} else {
 				assertEquals("For mate: Didn't move start two to the right even though insert was inside read", oldF.getStart()+2, f.getStart().intValue());
 				assertEquals("For mate: Didn't move end two to the right even though insert was inside read", oldF.getEnd()+2, f.getEnd().intValue());
 				assertEquals("For mate: Moved read start even though insert was inside read", oldF.getMateStart().intValue(), f.getMateStart().intValue());
-				assertEquals("For mate: Didn't change ISIZE even though insert was after read and mate", oldF.getInferredInsertSize().intValue()+(-2), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Didn't change ISIZE even though insert was inside read", oldF.getInferredInsertSize().intValue()+(-2), f.getInferredInsertSize().intValue());
 				assertEquals("For mate: Cigar string changed even though insert was inside read", f.getCigar().toString(), f.getCigar().toString());				
 			}
 			writer.addAlignment(r);
@@ -375,6 +375,281 @@ public class TestSAMUpdater {
 				assertEquals("For mate: Cigar string changed even though insert was inside read", f.getCigar().toString(), f.getCigar().toString());				
 			}
 			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleInsertInsideMate() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949510, 9949510, 0, 9949510, 9949512, 2, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (f.isFirstRead()) {
+				assertEquals("Moved read start even though insert was inside mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("Moved read end even though insert was inside mate", oldF.getEnd().intValue(), f.getEnd().intValue());
+				assertEquals("Moved mate start even though insert was inside mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("Didn't change ISIZE even though insert was inside mate", oldF.getInferredInsertSize().intValue()+2, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate end even though insert was inside mate", oldF.getMateEnd()+2, f.getMateEnd().intValue());
+				assertEquals("Cigar string changed even though insert was inside mate", oldF.getCigar().toString(), f.getCigar().toString());
+			} else {
+				assertEquals("For mate: Moved start even though insert was inside mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("For mate: Didn't move end two to the right even though insert was inside mate", oldF.getEnd()+2, f.getEnd().intValue());
+				assertEquals("For mate: Moved read start even though insert was inside mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("For mate: Didn't change ISIZE even though insert was inside mate", oldF.getInferredInsertSize().intValue()+(-2), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string didn't change even though insert was inside mate", "10M2D40M", f.getCigar().toString());				
+			}
+			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleDeleteInsideMate() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949510, 9949512, 2, 9949510, 9949510, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (f.isFirstRead()) {
+				assertEquals("Moved read start even though delete was inside mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("Moved read end even though delete was inside mate", oldF.getEnd().intValue(), f.getEnd().intValue());
+				assertEquals("Moved mate start even though delete was inside mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("Didn't change ISIZE even though delete was inside mate", oldF.getInferredInsertSize().intValue()-2, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate end even though delete was inside mate", oldF.getMateEnd()-2, f.getMateEnd().intValue());
+				assertEquals("Cigar string changed even though delete was inside mate", oldF.getCigar().toString(), f.getCigar().toString());
+			} else {
+				assertEquals("For mate: Moved start even though delete was inside mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("For mate: Didn't move end two to the left even though delete was inside mate", oldF.getEnd()-2, f.getEnd().intValue());
+				assertEquals("For mate: Moved read start even though delete was inside mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("For mate: Didn't change ISIZE even though delete was inside mate", oldF.getInferredInsertSize().intValue()-(-2), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string didn't change even though delete was inside mate", "10M2I38M", f.getCigar().toString());				
+			}
+			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleDeleteAcrossReadStart() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949429, 9949431, 2, 9949429, 9949429, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (f.isFirstRead()) {
+				assertEquals("Didn't move read start even though deleted two surrounding beginning of read", oldF.getStart()-1, f.getStart().intValue());
+				assertEquals("Didn't change cigar string even though deleted two surrounding beginning of read", "1I49M", f.getCigar().toString());
+				assertEquals("Didn't move read end even though deleted two surrounding beginning of read", oldF.getEnd()-2, f.getEnd().intValue());
+				assertEquals("Didn't move mate start even though deleted two surrounding beginning of read", oldF.getMateStart()-2, f.getMateStart().intValue());
+				assertEquals("Didn't change ISIZE even though deleted two surrounding beginning of read", oldF.getInferredInsertSize().intValue()-1, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate end even though deleted two surrounding beginning of read", oldF.getMateEnd()-2, f.getMateEnd().intValue());
+			} else {
+				// TODO: Detach mate from read since deleting across read beginning is ambiguous from the perspective of the mate
+				assertEquals("For mate: Didn't move mate start two to the left even though deleted two surrounding beginning of read", oldF.getStart().intValue()-2, f.getStart().intValue());
+				assertEquals("For mate: Didn't move mate end two to the left even though deleted two surrounding beginning of read", oldF.getEnd()-2, f.getEnd().intValue());
+				assertEquals("For mate: Didn't set read start to zero even though deleting from beginning of read is ambiguous from perspective of mate", 0, f.getMateStart().intValue());
+				assertEquals("For mate: Didn't set ISIZE to 0 even though deleting from beginning of read is ambiguous from perspective of mate", 0, f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string for mate changed even though deleted two surrounding beginning of read", oldF.getCigar().toString(), f.getCigar().toString());
+				assertTrue("For mate: Still have mapping of read even though deleting from beginning of read is ambiguous from perspective of mate", f.getMateUnmapped());
+			}
+			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleDeleteAcrossReadEnd() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949479, 9949481, 2, 9949479, 9949479, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (f.isFirstRead()) {
+				assertEquals("Moved read start even though deleted two surrounding end of read", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("Didn't change cigar string even though deleted two surrounding end of read", "49M1I", f.getCigar().toString());
+				assertEquals("Didn't move read end even though deleted two surrounding end of read", oldF.getEnd()-1, f.getEnd().intValue());
+				assertEquals("Didn't move mate start even though deleted two surrounding end of read", oldF.getMateStart()-2, f.getMateStart().intValue());
+				assertEquals("Didn't change ISIZE even though deleted two surrounding end of read", oldF.getInferredInsertSize().intValue()-2, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate end even though deleted two surrounding end of read", oldF.getMateEnd()-2, f.getMateEnd().intValue());
+			} else {
+				assertEquals("For mate: Didn't move mate start two to the left even though deleted two surrounding end of read", oldF.getStart().intValue()-2, f.getStart().intValue());
+				assertEquals("For mate: Didn't move mate end two to the left even though deleted two surrounding end of read", oldF.getEnd()-2, f.getEnd().intValue());
+				assertEquals("For mate: Moved read start even though deleted two surrounding end of read", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("For mate: Didn't change ISIZE even though deleted two surrounding end of read", oldF.getInferredInsertSize().intValue()-(-2), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string for mate changed even though deleted two surrounding end of read", oldF.getCigar().toString(), f.getCigar().toString());				
+			}
+			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleDeleteAcrossMateStart() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949499, 9949501, 2, 9949499, 9949499, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (f.isFirstRead()) {
+				assertEquals("Moved read start even though deleted two surrounding beginning of mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("Changed read cigar string even though deleted two surrounding beginning of mate", f.getCigar().toString(), f.getCigar().toString());
+				assertEquals("Moved read end even though deleted two surrounding beginning of mate", oldF.getEnd().intValue(), f.getEnd().intValue());
+				assertEquals("Didn't move mate start even though deleted two surrounding beginning of mate", oldF.getMateStart()-1, f.getMateStart().intValue());
+				assertEquals("Didn't change ISIZE even though deleted two surrounding beginning of mate", oldF.getInferredInsertSize().intValue()-2, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate end even though deleted two surrounding beginning of mate", oldF.getMateEnd()-2, f.getMateEnd().intValue());
+			} else {
+				assertEquals("For mate: Didn't move mate start one to the left even though deleted two surrounding beginning of mate", oldF.getStart().intValue()-1, f.getStart().intValue());
+				assertEquals("For mate: Didn't move mate end two to the left even though deleted two surrounding beginning of mate", oldF.getEnd()-2, f.getEnd().intValue());
+				assertEquals("For mate: Moved read start even though deleted two surrounding beginning of mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("For mate: Didn't change ISIZE even though deleted two surrounding beginning of mate", oldF.getInferredInsertSize().intValue()-(-2), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string for mate didn't change even though deleted two surrounding beginning of mate", "1I49M", f.getCigar().toString());				
+			}
+			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleDeleteAcrossMateEnd() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949549, 9949551, 2, 9949549, 9949549, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (f.isFirstRead()) {
+				assertEquals("Moved read start even though deleted two surrounding end of mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("Changed cigar string even though deleted two surrounding end of mate", f.getCigar().toString(), f.getCigar().toString());
+				assertEquals("Moved read end even though deleted two surrounding end of mate", oldF.getEnd().intValue(), f.getEnd().intValue());
+				assertEquals("Moved mate start even though deleted two surrounding end of mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("Didn't change ISIZE even though deleted two surrounding end of mate", oldF.getInferredInsertSize().intValue()-1, f.getInferredInsertSize().intValue());
+				assertEquals("Didn't move mate end even though deleted two surrounding end of mate", oldF.getMateEnd()-1, f.getMateEnd().intValue());
+			} else {
+				assertEquals("For mate: Moved mate start even though deleted two surrounding end of mate", oldF.getStart().intValue(), f.getStart().intValue());
+				assertEquals("For mate: Didn't move mate end one to the left even though deleted two surrounding end of mate", oldF.getEnd()-1, f.getEnd().intValue());
+				assertEquals("For mate: Moved read start even though deleted two surrounding end of mate", oldF.getMateStart().intValue(), f.getMateStart().intValue());
+				assertEquals("For mate: Didn't change ISIZE even though deleted two surrounding end of mate", oldF.getInferredInsertSize().intValue()-(-1), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string for mate didn't change even though deleted two surrounding end of mate", "49M1I", f.getCigar().toString());				
+			}
+			writer.addAlignment(r);
+		}
+		writer.close();
+	}
+	@Test
+	public void testSimpleDeleteWholeRead() throws MappingException, java.io.IOException {
+		ArrayList<MappingData> mappingData = new ArrayList<MappingData>();
+		MappingData mappingChange = new MappingData(1);
+		mappingChange.addMismatchPair("I", 9949429, 9949481, 52, 9949429, 9949429, 0, false);
+		mappingData.add(mappingChange);
+		SAMUpdater updater = new SAMUpdater(mappingData);
+		updater.setVerbose(true);
+
+		SAMFileReader reader = new SAMFileReader(new File("test.sam"));
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMWriter(reader.getFileHeader(), true, System.out);
+		for (SAMRecord r : reader) {
+			SAMFeature f = updater.new SAMFeature(r);
+			SAMFeature oldF = null;
+			try {
+				oldF = updater.new SAMFeature((SAMRecord)r.clone());
+			} catch (CloneNotSupportedException e) {
+				assertNull(e.getMessage(), e);
+				return;
+			}
+			f = (SAMFeature)updater.updateFeature(f);
+			if (oldF.isFirstRead()) {
+				assertNull("Still have a read object even though we deleted the whole read", f);
+			} else {
+				assertEquals("For mate: Didn't move mate start 52 to the let even though deleted read and surrounding 2 bases", oldF.getStart().intValue() - 52, f.getStart().intValue());
+				assertEquals("For mate: Didn't move mate end 52 to the left even though deleted read and surrounding 2 bases", oldF.getEnd()-52, f.getEnd().intValue());
+				assertEquals("For mate: Didn't set read start to zero even though deleted whole read", 0, f.getMateStart().intValue());
+				assertEquals("For mate: Didn't set ISIZE to zero though deleted whole read", oldF.getInferredInsertSize().intValue()-(-1), f.getInferredInsertSize().intValue());
+				assertEquals("For mate: Cigar string for mate didn't change even though deleted two surrounding end of mate", "49M1I", f.getCigar().toString());				
+				assertTrue("For mate: Still have mapping of read even though deleted whole read", f.getMateUnmapped());
+				assertFalse("For mate: This should be impossible; mate is first read?!!", oldF.isFirstRead());
+				assertFalse("For mate: Mate is still listed as \"second\" read, even though the first read was deleted", oldF.isSecondRead());
+			}
+			if (f != null) {
+				writer.addAlignment(r);
+			}
 		}
 		writer.close();
 	}

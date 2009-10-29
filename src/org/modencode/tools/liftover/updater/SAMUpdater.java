@@ -52,6 +52,13 @@ public class SAMUpdater extends AbstractUpdater {
 					 * Simple insertions (insert in between reads)
 					 */
 					// The read
+					int orig_start = f.getStart();
+					int orig_end = f.getEnd();
+					int orig_mate_start = f.getMateStart();
+					int orig_mate_end = 0;
+					if (f.getStart() < f.getMateStart()) {
+						orig_mate_end = f.getMateEnd();
+					}
 					if (f.getStart() >= mm.previousMismatch.end) {
 						// The start is past the end of the mismatch, so just shift the start right
 						// by the difference in length of the old and new regions
@@ -74,23 +81,67 @@ public class SAMUpdater extends AbstractUpdater {
 								int shift = mm.thisMismatch.length - mm.previousMismatch.length;
 								f.setMateStart(f.getMateStart() + shift);
 							} else if (f.getMateStart() >= mm.previousMismatch.start && (f.getMateStart() - mm.previousMismatch.start) > mm.thisMismatch.length) {
-								f.setMateStart(mm.previousMismatch.start + mm.thisMismatch.length);
-								// Start of mate was inside changed region, so lock to end of new region
+								if (orig_start > orig_mate_start) {
+									// Start of mate was inside changed region, which means we're in the
+									// ambiguous situation where we may or may not have deleted the whole mate, 
+									// since we can't see the end of the mate
+									f.setMateStart(0);
+									f.setInferredInsertSize(0);
+									f.setMateUnmapped(true);
+								} else {
+									// We know both ends of the mate, and so it's not ambiguous. Instead,
+									// lock the beginning of the mate to the beginning/end of the deleted region
+									f.setMateStart(mm.previousMismatch.start + mm.thisMismatch.length);
+								}
 							}
-							if (mm.previousMismatch.length != mm.thisMismatch.length) { 
+							if (mm.previousMismatch.length != mm.thisMismatch.length && !f.getMateUnmapped()) { 
 								if (
-										(f.getStart() < f.getMateStart() && mm.previousMismatch.start > f.getStart() && mm.previousMismatch.end < f.getMateEnd()) ||
-										(f.getStart() > f.getMateStart() && mm.previousMismatch.start > f.getMateStart() && mm.previousMismatch.end < f.getEnd())
+										(orig_start < orig_mate_start && mm.previousMismatch.start > orig_start && mm.previousMismatch.end < f.getMateEnd()) ||
+										(orig_start > orig_mate_start && mm.previousMismatch.start > orig_mate_start && mm.previousMismatch.end < orig_end)
 								) {
 									// Change in ISIZE; something changed between beginning of read and end of mate
 									int shift = mm.thisMismatch.length - mm.previousMismatch.length;
-									if (f.getMateStart() > f.getStart()) {
+									/*
+									if (offset < 0) {
+										shift -= offset;
+									}*/
+									if (orig_mate_start > orig_start) {
 										// Mate after read; add shift to isize
 										f.setInferredInsertSize(f.getInferredInsertSize() + shift);
 									} else {
 										// Mate before read; add -shift to isize
 										f.setInferredInsertSize(f.getInferredInsertSize() + (-shift));
 									}
+								} else if (orig_start < orig_mate_start && mm.previousMismatch.start < orig_start && mm.previousMismatch.end > orig_start) {
+									int offset = mm.previousMismatch.start - orig_start;
+									int shift = mm.thisMismatch.length - mm.previousMismatch.length;
+									if (offset < 0) {
+										shift -= offset;
+									}
+									if (orig_mate_start > orig_start) {
+										// Mate after read; add shift to isize
+										f.setInferredInsertSize(f.getInferredInsertSize() + shift);
+									} else {
+										// Mate before read; add -shift to isize
+										f.setInferredInsertSize(f.getInferredInsertSize() + (-shift));
+									}
+								} else if (orig_start > orig_mate_start && mm.previousMismatch.start < orig_mate_start && mm.previousMismatch.end > orig_mate_start) {
+									int offset = mm.previousMismatch.start - orig_mate_start;
+									int shift = mm.thisMismatch.length - mm.previousMismatch.length;
+									if (offset < 0) {
+										shift -= offset;
+									}
+									if (orig_mate_start > orig_start) {
+										// Mate after read; add shift to isize
+										f.setInferredInsertSize(f.getInferredInsertSize() + shift);
+									} else {
+										// Mate before read; add -shift to isize
+										f.setInferredInsertSize(f.getInferredInsertSize() + (-shift));
+									}									
+								} else if (orig_start > orig_mate_start && mm.previousMismatch.start <= orig_end && mm.previousMismatch.end > orig_end) {
+									int length = mm.thisMismatch.length - mm.previousMismatch.length;
+									length = length - (-((mm.previousMismatch.end-1) - orig_end));
+									f.setInferredInsertSize(f.getInferredInsertSize() - length);
 								}
 							}
 						}
@@ -100,11 +151,15 @@ public class SAMUpdater extends AbstractUpdater {
 					 * A change in length
 					 */
 					// ... of the read
-					if (f.getStart() < mm.previousMismatch.end && f.getEnd() > mm.previousMismatch.end) {
+					if (orig_start < mm.previousMismatch.end && orig_end > mm.previousMismatch.end) {
 						if (mm.previousMismatch.length != mm.thisMismatch.length) {
-							int offset = mm.previousMismatch.start - f.getStart();
-							if (offset < 0) { throw new MappingException("Pure insert seems to be outside the read it's inserting into"); }
+							int offset = mm.previousMismatch.start - orig_start;
+							//if (offset < 0) { throw new MappingException("Pure insert seems to be outside the read it's inserting into"); }
 							int shift = mm.thisMismatch.length - mm.previousMismatch.length;
+							if (offset < 0) {
+								if (shift > 0) { shift += offset; } else { shift -= offset; }
+								offset = 0;
+							}
 							Cigar newCigar = f.getCigar();
 							if (shift > 0) {
 								// Pure insertion
@@ -117,22 +172,24 @@ public class SAMUpdater extends AbstractUpdater {
 							}
 							f.setCigar(newCigar);
 						}
+					} else if (orig_end < mm.previousMismatch.end && orig_end >= mm.previousMismatch.start) {
+						if (mm.previousMismatch.length != mm.thisMismatch.length) {
+							int offset = mm.previousMismatch.start - orig_start;
+							int length = mm.previousMismatch.length - mm.thisMismatch.length;
+							length = length - ((mm.previousMismatch.end-1) - orig_end);
+							Cigar newCigar = f.getCigar();
+							newCigar = updateCigarForDeletedReference(f.getCigar(), offset, length);
+							f.setCigar(newCigar);
+						}
 					}
 					// ... of the mate
-					if (f.getStart() < f.getMateStart()) {
-						if (f.getMateStart() < mm.previousMismatch.end && f.getMateEnd() > mm.previousMismatch.end) {
-							if (mm.previousMismatch.length < mm.thisMismatch.length) {
-								int offset = mm.previousMismatch.start - f.getStart();
-								if (offset < 0) { throw new MappingException("Pure insert seems to be outside the read it's inserting into"); }
-								int shift = mm.thisMismatch.length - mm.previousMismatch.length;
-								if (f.getMateStart() > f.getStart()) {
-									// Mate after read; add shift to isize
-									f.setInferredInsertSize(f.getInferredInsertSize() + shift);
-								} else {
-									// Mate before read; add -shift to isize
-									f.setInferredInsertSize(f.getInferredInsertSize() + (-shift));
-								}
-							}
+					// Only applies if we're looking at a change to the mate from the perspective of the read
+					if (orig_start < orig_mate_start) {
+						if (orig_mate_end < mm.previousMismatch.end && orig_mate_end >= mm.previousMismatch.start) {
+							int length = mm.previousMismatch.length - mm.thisMismatch.length;
+							length = length - ((mm.previousMismatch.end-1) - orig_mate_end);
+							// All we can change is the isize
+							f.setInferredInsertSize(f.getInferredInsertSize() - length);
 						}
 					}
 				}
@@ -142,7 +199,6 @@ public class SAMUpdater extends AbstractUpdater {
 	}
 	public Cigar updateCigarForInsertedReference(Cigar cigar, int position, int length) throws IndexOutOfBoundsException {
 		StringBuilder cigarExtender = new StringBuilder();
-		StringBuilder newCigarExtender = new StringBuilder();
 		Cigar newCigar = new Cigar();
 		
 		for (CigarElement elem : cigar.getCigarElements()) {
@@ -199,7 +255,7 @@ public class SAMUpdater extends AbstractUpdater {
 		}
 		int curOpLength = 1;
 		int iRelativeToReference = 0;
-		int cursor = 0;
+		int cursor = -1;
 		for (int i = 0; iRelativeToReference < position; i++) {
 			CigarOperator curOp = CigarOperator.characterToEnum(extendedCigar.charAt(i));
 			if (curOp != CigarOperator.INSERTION) { iRelativeToReference++; }
@@ -303,7 +359,7 @@ public class SAMUpdater extends AbstractUpdater {
 			if (getMateStart() > getStart()) {
 				int left_of_read = this.getStart();
 				if (ins_size != 0) {
-					return left_of_read + ins_size;
+					return left_of_read + ins_size - 1;
 				} else {
 					throw new RuntimeException("No inferred insert size; can't find mate end");
 				}
@@ -334,6 +390,9 @@ public class SAMUpdater extends AbstractUpdater {
 		public boolean getMateUnmapped() {
 			return thisRecord.getMateUnmappedFlag();
 		}
+		public void setMateUnmapped(boolean isUnmapped) {
+			thisRecord.setMateUnmappedFlag(isUnmapped);
+		}
 		public boolean getReadUnmapped() {
 			return thisRecord.getReadUnmappedFlag();
 		}
@@ -342,6 +401,9 @@ public class SAMUpdater extends AbstractUpdater {
 		}
 		public boolean isFirstRead() {
 			return thisRecord.getFirstOfPairFlag();
+		}
+		public boolean isSecondRead() {
+			return thisRecord.getSecondOfPairFlag();
 		}
 		public void setInferredInsertSize(int inferredInsertSize) {
 			thisRecord.setInferredInsertSize(inferredInsertSize);
