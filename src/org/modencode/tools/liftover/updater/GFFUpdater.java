@@ -7,9 +7,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
 import org.modencode.tools.liftover.MappingException;
@@ -18,7 +19,6 @@ public class GFFUpdater extends AbstractUpdater {
 	public GFFUpdater(List<MappingData> mappingData) {
 		super(mappingData);
 	}
-	
 	private String processHeader(String line) throws MappingException {
 		/**This delegates updates for the directives "sequence-region"
 		 * and "genome-build", both of which are specific to the contents 
@@ -31,7 +31,7 @@ public class GFFUpdater extends AbstractUpdater {
 		if (header[0].contains("sequence-region")) {
 			header = updateSequenceRegion(header);
 		}
-		return StringUtils.join(header, " ");
+		return join(" ", Arrays.asList(header));
 	}
 	private String[] updateGenomeBuild(String[] genomeBuild) throws MappingException {
 		/** This changes the WS build number according to what is specified 
@@ -191,5 +191,14 @@ public class GFFUpdater extends AbstractUpdater {
 			
 			return res;
 		}
+	}
+	private static String join(Object delimiter, Iterable<?> elements) {
+		StringBuilder b = new StringBuilder();
+		Iterator<?> i = elements.iterator();
+		while (i.hasNext()) {
+			b.append(i.next());
+			if (i.hasNext()) { b.append(delimiter); }
+		}
+		return b.toString();
 	}
 }
