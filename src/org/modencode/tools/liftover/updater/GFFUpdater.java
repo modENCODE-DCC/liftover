@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
 import org.modencode.tools.liftover.MappingException;
@@ -17,6 +18,62 @@ public class GFFUpdater extends AbstractUpdater {
 	public GFFUpdater(List<MappingData> mappingData) {
 		super(mappingData);
 	}
+	
+	private String processHeader(String line) throws MappingException {
+		/**This delegates updates for the directives "sequence-region"
+		 * and "genome-build", both of which are specific to the contents 
+		 * of the file
+		 */
+		String[] header = line.split("\\s+");
+		if (header[0].contains("genome-build")) {
+			header = updateGenomeBuild(header);
+		}
+		if (header[0].contains("sequence-region")) {
+			header = updateSequenceRegion(header);
+		}
+		return StringUtils.join(header, " ");
+	}
+	private String[] updateGenomeBuild(String[] genomeBuild) throws MappingException {
+		/** This changes the WS build number according to what is specified 
+		 * in the liftover parameters
+		 */
+		
+		// ##genome-build source buildnum
+		String buildnum = genomeBuild[2];
+		buildnum = "WS" + mappingData.get(mappingData.size()-1).getRelease();		
+		genomeBuild[2] = buildnum;
+		return genomeBuild;
+	}
+	
+	private String[] updateSequenceRegion(String[] sequenceRegion) throws MappingException {
+		/**This function updates the start and end coordinates for the current 
+		 * sequence-region directive by adding the net change in length calculated 
+		 * from the CHROMOSOME_DIFFERENCES items.  the result will be wrong if 
+		 * the starting values are also wrong.  although most of the time the
+		 * sequence-regions will start at a value of 1, this will allow for other 
+		 * starting values 
+		 */ 
+		 //##sequence-region reference start end		 
+		String ref = sequenceRegion[1];
+		int newStart = Integer.parseInt(sequenceRegion[2]);
+		int newEnd = Integer.parseInt(sequenceRegion[3]);
+		for (int i=0; i<mappingData.size(); i++) {
+			for (int j=0; j<mappingData.get(i).getMismatchPairs(ref).size(); j++) {
+				MappingData.MismatchPair mmPair = mappingData.get(i).getMismatchPairs(ref).get(j);
+				int sizeDiff = mmPair.thisMismatch.length - mmPair.previousMismatch.length;
+				if (mmPair.previousMismatch.start > Integer.parseInt(sequenceRegion[2])) {						
+					newEnd+=sizeDiff;
+				} else {
+					newStart+=sizeDiff;
+				}
+			}
+		}
+		sequenceRegion[2] = Integer.toString(newStart);
+		sequenceRegion[3] = Integer.toString(newEnd);
+		return sequenceRegion;
+		
+	}
+	
 	private GFFFeature processLine(String line) throws MappingException {
 		String[] fields = line.split("\t");
 		Integer start = null, end = null;
@@ -55,10 +112,14 @@ public class GFFUpdater extends AbstractUpdater {
 			while ((line = reader.readLine()) != null) {
 				bytesProcessed += line.length()+1;
 				this.updateProgress(bytesProcessed/(double)fileSize);
-				if (line.matches("^\\s*$") || line.matches("^\\s*#.*")) {
-					writer.write(line); // Comment or blank line
+				if (line.matches("^\\s*##.*")) {
+					writer.write(this.processHeader(line)); //directives
 				} else {
-					writer.write(this.processLine(line).toString());
+					if (line.matches("^\\s*$") || line.matches("^\\s*#.*")) {
+						writer.write(line); // blank line or comments
+					} else {
+						writer.write(this.processLine(line).toString());
+					}
 				}
 				writer.newLine();
 			}

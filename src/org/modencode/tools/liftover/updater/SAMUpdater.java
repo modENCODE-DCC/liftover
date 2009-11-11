@@ -7,10 +7,12 @@ import java.util.List;
 import net.sf.samtools.Cigar;
 import net.sf.samtools.CigarElement;
 import net.sf.samtools.CigarOperator;
+import net.sf.samtools.SAMFileHeader;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMFileWriter;
 import net.sf.samtools.SAMFileWriterFactory;
 import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMSequenceDictionary;
 
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
@@ -22,15 +24,43 @@ public class SAMUpdater extends AbstractUpdater {
 		super(mappingData);
 	}
 	
+	public SAMFileHeader updateHeader(SAMFileHeader header) throws MappingException {
+		/**This function loops through all SQ headers and updates the length 
+		 * coordinate by adding the net change in length calculated from the
+		 * CHROMOSOME_DIFFERENCES items.  the result will be wrong if the starting
+		 * values are also wrong.  this also changes the WS build number
+		 * according to what is specified in the liftover parameters
+		 */
+		SAMSequenceDictionary sd = header.getSequenceDictionary();
+		for (int z=0; z<sd.getSequences().size(); z++) {
+			int sizeDiff = 0;
+			for (int i=0; i<mappingData.size(); i++) {
+				String ref = sd.getSequence(z).getSequenceName();
+				for (int j=0; j<mappingData.get(i).getMismatchPairs(ref).size(); j++) {
+					MappingData.MismatchPair mmPair = mappingData.get(i).getMismatchPairs(ref).get(j);
+					sizeDiff += mmPair.thisMismatch.length - mmPair.previousMismatch.length;
+				}
+			}
+			sd.getSequence(z).setSequenceLength(sd.getSequence(z).getSequenceLength()+sizeDiff);
+			sd.getSequence(z).setAttribute("AS", "WormBase WS"+mappingData.get(mappingData.size()-1).getRelease());
+		}
+		header.setSequenceDictionary(sd);
+		return header;
+	}
+	
 	public void processFile(File samFile, File outFile) throws MappingException {
 		SAMFileReader reader = new SAMFileReader(samFile);
-		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(reader.getFileHeader(), true, outFile);
+		
+		SAMFileHeader header = reader.getFileHeader();
+		header = this.updateHeader(header);
+		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(header, true, outFile);
 		
 		for (SAMRecord r : reader) {
 			SAMFeature f = new SAMFeature(r);
 			f = (SAMFeature)this.updateFeature(f);
 			writer.addAlignment(r);
-		}		
+		}	
+		writer.close();
 	}
 	@Override
 	public AbstractFeature updateFeature(AbstractFeature af) throws MappingException {

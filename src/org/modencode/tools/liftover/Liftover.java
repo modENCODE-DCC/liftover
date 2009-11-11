@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.modencode.tools.liftover.updater.BEDUpdater;
 import org.modencode.tools.liftover.updater.GFFUpdater;
+import org.modencode.tools.liftover.updater.SAMUpdater;
 import org.modencode.tools.liftover.updater.WIGUpdater;
 
 import com.martiansoftware.jsap.*;
@@ -28,6 +29,9 @@ public class Liftover {
 						),
 						new FlaggedOption("bed", FileStringParser.getParser(), null, JSAP.NOT_REQUIRED, 'b', "bed", 
 								"An input BED file."
+						),
+						new FlaggedOption("sam", FileStringParser.getParser(), null, JSAP.NOT_REQUIRED, 's', "sam", 
+								"An input SAM file."
 						),
 						new FlaggedOption("out", FileStringParser.getParser(), null, JSAP.REQUIRED, 'o', "output", 
 								"The output file."
@@ -71,6 +75,13 @@ public class Liftover {
 			BEDUpdater bedu = new BEDUpdater(mappingData);
 			bedu.setVerbose(true);
 			bedu.processFile(bedFile, outFile);
+		} else if (config.contains("sam")) {
+			File samFile = config.getFile("sam");
+			
+			SAMUpdater samu = new SAMUpdater(mappingData);
+			samu.setVerbose(true);
+			samu.processFile(samFile, outFile);
+			
 		}
 		
 	}
