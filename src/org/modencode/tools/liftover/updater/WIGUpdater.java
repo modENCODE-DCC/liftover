@@ -16,7 +16,7 @@ import org.modencode.tools.liftover.MappingException;
 public class WIGUpdater extends AbstractUpdater {
 
 	private enum WIGType {
-		FIXED_STEP, VARIABLE_STEP;
+		FIXED_STEP, VARIABLE_STEP, BED;
 		public String toString() {
 			String words[] = super.toString().split("_");
 			String res = words[0].toLowerCase();
@@ -80,7 +80,14 @@ public class WIGUpdater extends AbstractUpdater {
 							writer.write(line);
 						} else {
 							if (lineParser == null) {
-								throw new MappingException("Wiggle parser unsure of type reading line " + line);
+								System.err.println("Wiggle parser unsure of type, trying to detect from " + line);
+								if (line.matches("\\S+\\t\\d+\\t\\d+\\t\\d")) {
+									System.err.println("  Detected BED format.");
+									lineParser = new BEDParser();
+								}
+								if (lineParser == null) {
+									throw new MappingException("Wiggle parser unsure of type reading line " + line);
+								}
 							}
 							writer.write(lineParser.processLine(line).toString());
 						}
@@ -116,6 +123,7 @@ public class WIGUpdater extends AbstractUpdater {
 		protected String chr;
 		public abstract WIGFeature processLine(String line) throws MappingException;
 		public WiggleLineParser(String chr) { this.chr = chr; }
+		public WiggleLineParser() {};
 	}
 	private class VariableStepParser extends WiggleLineParser {
 		private int span;
@@ -148,6 +156,17 @@ public class WIGUpdater extends AbstractUpdater {
 			Integer end = start + span;
 			currentStart += step;
 			WIGFeature f = new WIGFeature(WIGType.FIXED_STEP, chr, start, end, line);
+			
+			return (WIGFeature)updateFeature(f);
+		}
+	}
+	private class BEDParser extends WiggleLineParser {
+		public BEDParser() {}
+		public WIGFeature processLine(String line) throws MappingException {
+			String[] fields = line.split("\\s+");
+			Integer start = new Integer(Integer.parseInt(fields[1]));
+			Integer end = new Integer(Integer.parseInt(fields[2]));
+			WIGFeature f = new WIGFeature(WIGType.BED, fields[0], start, end, fields[3]);
 			
 			return (WIGFeature)updateFeature(f);
 		}
@@ -186,6 +205,8 @@ public class WIGUpdater extends AbstractUpdater {
 				// We write out fixedStep as variableStep so it can actually reflect
 				// changes
 				res += this.start + "\t" + this.score;
+			} else if (this.type == WIGType.BED) {
+				res += this.chr + "\t" + this.start + "\t" + this.end + "\t" + this.score;
 			}
 			return res;
 		}

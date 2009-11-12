@@ -5,12 +5,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MappingDataFactory {
 	
-	public final static String RELEASE_FILE_TEMPLATE = "CHROMOSOME_DIFFERENCES/sequence_differences.WS%d";
+	public final static String RELEASE_FILE_TEMPLATE = "/CHROMOSOME_DIFFERENCES/sequence_differences.WS%d";
 
 	public static List<MappingData> generateMappings(int startRelease, int destinationRelease) throws MappingException {
 		List<MappingData> mappings;
@@ -40,15 +42,15 @@ public class MappingDataFactory {
 		ArrayList<MappingData> allMappingData = new ArrayList<MappingData>();
 		
 		for (int curRelease = startRelease+1; curRelease <= destinationRelease; curRelease++) {
-			File differencesFile = new File(String.format(RELEASE_FILE_TEMPLATE, curRelease));
-			BufferedReader reader;
-			try {
-				FileReader fileReader = new FileReader(differencesFile);
-				reader = new BufferedReader(fileReader);
-			} catch (FileNotFoundException e) {
-				System.err.println("Couldn't open " + differencesFile);
-				throw new MappingException("Couldn't open " + differencesFile, e);
+			String path = String.format(RELEASE_FILE_TEMPLATE, curRelease);
+			
+			InputStream differencesFile = MappingDataFactory.class.getResourceAsStream(path);
+			if (differencesFile == null) {
+				System.err.println("Couldn't open " + path);
+				throw new MappingException("Couldn't open " + path);
 			}
+			BufferedReader reader;
+			reader = new BufferedReader(new InputStreamReader(differencesFile));
 			
 			MappingData md = new MappingData(curRelease);
 			try {
