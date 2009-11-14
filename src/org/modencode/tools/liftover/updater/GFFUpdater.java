@@ -79,8 +79,14 @@ public class GFFUpdater extends AbstractUpdater {
 		Integer start = null, end = null;
 		try { start = new Integer(Integer.parseInt(fields[3])); } catch (NumberFormatException e) { }
 		try { end = new Integer(Integer.parseInt(fields[4])); } catch (NumberFormatException e) { }
+		String attrs;
+		if (fields.length == 8) {
+			attrs = "";
+		} else {
+			attrs = fields[8];
+		}
 		GFFFeature f = new GFFFeature(fields[0], fields[1], fields[2], start, end,
-				fields[5], fields[6], fields[7], fields[8]);
+				fields[5], fields[6], fields[7], attrs);
 		
 		return (GFFFeature)updateFeature(f);
 	}
