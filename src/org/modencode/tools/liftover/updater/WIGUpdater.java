@@ -81,7 +81,7 @@ public class WIGUpdater extends AbstractUpdater {
 						} else {
 							if (lineParser == null) {
 								System.err.println("Wiggle parser unsure of type, trying to detect from " + line);
-								if (line.matches("\\S+\\t\\d+\\t\\d+\\t\\d")) {
+								if (line.matches("\\S+\\t\\d+\\t\\d+\\t-?\\d.*")) {
 									System.err.println("  Detected BED format.");
 									lineParser = new BEDParser();
 								}
