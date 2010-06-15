@@ -366,9 +366,6 @@ public class SAMUpdater extends AbstractUpdater {
 	public class SAMFeature extends AbstractFeature {
 		private SAMRecord originalRecord = null;
 		private SAMRecord thisRecord = null;
-		private boolean dropped = false;
-		private boolean flipped = false;
-		private boolean changed = false;
 		public SAMFeature(SAMRecord record) throws MappingException {
 			this.thisRecord = record;
 			try {
@@ -483,6 +480,9 @@ public class SAMUpdater extends AbstractUpdater {
 		public Cigar getCigar() {
 			return thisRecord.getCigar();
 		}
-
+		@Deprecated
+		public SAMRecord getOriginalRecord() {
+			return this.originalRecord;
+		}
 	}
 }
