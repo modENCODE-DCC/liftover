@@ -1,0 +1,89 @@
+##genome-build WormBase WS75
+# To be lifted to WS76
+
+# Non-overlapping mismatches
+IV	Test	Testing	12345	12355	.	.	.	ID=mm-fully-after; no change
+IV	Test	Testing	16422615	16422620	.	.	.	ID=mm-before-constant; no change
+IV	Test	Testing	16424501	16424503	.	.	.	ID=mm-before-increases; shifted
+
+# Feature > mismatch on both ends
+IV	Test	Testing	16426790	16426836	.	.	.	ID=mm-in-remsome
+X	Test	Testing	15981150	15981160	.	.	.	ID=mm-in-noneleft
+IV	Test	Testing	16449590	16449598	.	.	.	ID=mm-in-added
+IV	Test	Testing	16440864	16440944	.	.	.	ID=mm-in-addsome
+
+# Mismatch > Feature on both ends - mark all as indeterminate
+IV	Test	Testing	16440900	16440920	.	.	.	ID=mm-around-adding
+IV	Test	Testing	16436333	16436343	.	.	.	ID=mm-around-someleft
+IV	Test	Testing	16436332	16436334	.	.	.	ID=mm-around-allgone
+
+# Mismatch overlaps left end of feature ; mismatch starting length > 0
+IV	Test	Testing	16426800	16426835	.	.	.	ID=mm-lol-remsome
+IV	Test	Testing	16424050	16424061	.	.	.	ID=mm-lol-addsome
+IV	Test	Testing	16422609	16422618	.	.	.	ID=mm-lol-change
+
+# Mismatch overlaps right end of feature ; mismatch starting length > 0
+IV	Test	Testing	16436330	16436335	.	.	.	ID=mm-rol-remove
+IV	Test	Testing	16440860	16440869	.	.	.	ID=mm-rol-add
+IV	Test	Testing	16422605	16422609	.	.	.	ID=mm-rol-change
+
+##FASTA
+>mm-fully-after feature : no change
+aaaaaAAAAAa
+>mm-before-constant : no change
+cccccc
+>mm-before-increases : no change
+acg
+>mm-around-adding : indeterminate
+aaaaacccccGGGGGtttttU
+>mm-around-allgone : indeterminate
+CGA
+>mm-around-someleft : indeterminate
+ATU
+ATU
+ATU
+C
+>mm-in-remsome : 47 bases. should result in 45 bases of x: the 3 beginning ok, and the 2 end.
+AGG
+TTTTTttttt
+cccccCCCCC
+AAAAAaaaaa
+gggggGGGGG
+UUUU
+>mm-in-noneleft : entirely a's
+aaaaa
+G
+aaaaa
+>mm-in-added : one base added between g's and t's
+gggggg
+ttt
+>mm-in-addsome : 8 bases added near the end 
+G
+aaaaaccccc
+aaaaaccccc
+aaaaaccccc
+aaaaaccccc
+aaaaaccccc
+aaaaaccccc
+aaaaaccccc
+aaaaaccccc
+>mm-lol-remsome
+aaaaaa
+cccccc
+tttttt
+gggggg
+uuuuuu
+ATATAT
+>mm-lol-addsome
+aaaaa
+ttttt
+gg
+>mm-lol-change
+agtga
+agtga
+>mm-rol-remove
+agtagt
+>mm-rol-add
+atataGCGCG
+>mm-rol-change
+acGTu

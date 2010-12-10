@@ -188,18 +188,27 @@ public class WIGUpdater extends AbstractUpdater {
 		
 		public String toString() {
 			String res = "";
+			String pfx = getCommentPrefix();
 			if (changed && isVerbose()) {
+				if (indeterminate){
+					res += pfx + "Following position dropped due to indeterminate length after lifting" + "\n";
+					res += pfx + this.originalFeature.toString();
+					return res;
+				}
 				if (dropped) {
-					res += "# Following position dropped due to inversion: " + "\n";
-					res += "#" + this.originalFeature.toString();
+					res += pfx + "Following position dropped due to inversion: " + "\n";
+					res += pfx + this.originalFeature.toString();
 					return res;
 				} else if (flipped) {
-					res += "# The following position was inverted\n";
-					res += "#" + this.originalFeature.toString() + "\n";
+					res += pfx + "The following position was inverted\n";
+					res += pfx + this.originalFeature.toString() + "\n";
 				} else {
-					res += "# The following span contains an internal structure change that may not be visible:\n";
-					res += "#" + this.originalFeature.toString() + "\n";
+					res += pfx + "The following span contains an internal structure change that may not be visible:\n";
+					res += pfx + this.originalFeature.toString() + "\n";
 				}
+			} else if (indeterminate || dropped ) {
+				// if not verbose, just silently drop indeterminate and dropped features.
+				return "" ;
 			}
 			if (this.type == WIGType.VARIABLE_STEP || this.type == WIGType.FIXED_STEP) {
 				// We write out fixedStep as variableStep so it can actually reflect

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.Collections;
 
 public class MappingData {
 
@@ -47,6 +48,25 @@ public class MappingData {
 			return mismatches.get(chromosome);
 		} else {
 			return new ArrayList<MismatchPair>();
+		}
+	}
+	
+	// Reverse  the list of MismatchPairs attached to each chromosome.
+	// If this isn't done, when lifting takes place there may be an error if the partially-lifted feature
+	// should overlap with a MappingPair, but has been offset by earlier MappingPairs and doesn't (or vice versa).
+	// Example:
+	// Chromosome X
+	//  100 100 0	100 200 100	0
+	//  150 160 10	250	250 0	0
+	//
+	// Imagine we have a feature on pairs 140 - 170.
+	// If we lift in forward order, the first pair offsets the feature to 240 - 270.
+	// Then, the second pair offsets it back to 230 - 260, when in reality the feature overlaps the second pair.
+	// With the list reversed, the second pair sets the feature to 140 - 160, and *then*
+	// the first pair offsets it to 240 - 260, its true value.
+	public void reverseMismatchLists(){
+		for (String chr : this.getChromosomes()) {
+			Collections.reverse(mismatches.get(chr));
 		}
 	}
 	

@@ -75,11 +75,25 @@ public class MappingDataFactory {
 				System.err.println("Couldn't read line from " + differencesFile);
 				throw new MappingException("Couldn't read line from " + differencesFile, e);
 			}
+			// For each chromosome, reverse the order the mismatches are in.
+			// This is to prevent errors in partially-lifted features.
+			md.reverseMismatchLists();
+			// verify that the mismatch list for each chromosome is decreasing by prev_end / prev_start (equal values are acceptable)
+			for(String chr : md.getChromosomes()) {
+				int mmp_curr = 0 ;
+				int mmp_prev = Integer.MAX_VALUE ;
+				for(MappingData.MismatchPair mmp : md.getMismatchPairs(chr)) {
+					mmp_curr = mmp.previousMismatch.end ;
+					if (mmp_curr > mmp_prev) {
+						System.err.println("Error: "+ mmp_curr + "is more than" + mmp_prev + "--mismatches are expected to decrease ");
+					}
+					mmp_prev = mmp.previousMismatch.start ;
+				}
+			}
+			
+			
 			allMappingData.add(md);
 		}
-		
-		
-		
 		return allMappingData;
 	}
 

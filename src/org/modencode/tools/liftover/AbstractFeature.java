@@ -3,7 +3,7 @@ package org.modencode.tools.liftover;
 public abstract class AbstractFeature {
 	protected String chr, strand;
 	protected Integer start, end;
-	protected boolean changed = false, flipped = false, dropped = false;
+	protected boolean changed = false, flipped = false, dropped = false, indeterminate = false;
 
 	public String getChromosome() {
 		return chr;
@@ -26,6 +26,9 @@ public abstract class AbstractFeature {
 	public void setDropped(boolean dropped) {
 		this.dropped = dropped;
 	}
+	public void setIndeterminate(boolean indeterminate){
+		this.indeterminate = indeterminate;
+	}
 	public void setStart(Integer start) {
 		this.start = start;
 	}
@@ -34,5 +37,9 @@ public abstract class AbstractFeature {
 	}
 	public void setStrand(String strand) {
 		this.strand = strand;
+	}
+	// Return the line prefix that comments regarding invalidated features should use
+	public String getCommentPrefix(){
+		return "#liftover: " ;
 	}
 }

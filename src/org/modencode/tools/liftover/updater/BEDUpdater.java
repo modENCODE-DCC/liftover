@@ -84,18 +84,27 @@ public class BEDUpdater extends AbstractUpdater {
 		
 		public String toString() {
 			String res = "";
+			String pfx = getCommentPrefix();
 			if (changed && isVerbose()) {
+				if (indeterminate){
+					res += pfx + "Following element dropped due to indeterminate length after lifting" + "\n";
+					res += pfx + this.originalFeature.toString();
+					return res;
+				}
 				if (dropped) {
-					res += "# Following element dropped due to inversion: " + "\n";
-					res += "#" + this.originalFeature.toString();
+					res += pfx + "Following element dropped due to inversion: " + "\n";
+					res += pfx + this.originalFeature.toString();
 					return res;
 				} else if (flipped) {
-					res += "# The following element was inverted\n";
-					res += "#" + this.originalFeature.toString() + "\n";
+					res += pfx + "The following element was inverted\n";
+					res += pfx + this.originalFeature.toString() + "\n";
 				} else {
-					res += "# The following element had a structure change\n";
-					res += "#" + this.originalFeature.toString() + "\n";
+					res += pfx + "The following element had a structure change\n";
+					res += pfx + this.originalFeature.toString() + "\n";
 				}
+			} else if (indeterminate || dropped ) {
+				// if not verbose, just silently drop indeterminate and dropped features.
+				return "" ;
 			}
 			res += this.chr + " " + this.start + " " + this.end + " " + this.score;
 			return res;
