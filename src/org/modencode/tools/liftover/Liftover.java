@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.List;
 
 import org.modencode.tools.liftover.updater.BEDUpdater;
+import org.modencode.tools.liftover.updater.ChadoXMLUpdater;
 import org.modencode.tools.liftover.updater.GFFUpdater;
 import org.modencode.tools.liftover.updater.SAMUpdater;
 import org.modencode.tools.liftover.updater.WIGUpdater;
@@ -32,6 +33,9 @@ public class Liftover {
 						),
 						new FlaggedOption("sam", FileStringParser.getParser(), null, JSAP.NOT_REQUIRED, 's', "sam", 
 								"An input SAM file."
+						),
+						new FlaggedOption("xml", FileStringParser.getParser(), null, JSAP.NOT_REQUIRED, 'x', "xml", 
+								"An input ChadoXML file."
 						),
 						new FlaggedOption("out", FileStringParser.getParser(), null, JSAP.REQUIRED, 'o', "output", 
 								"The output file."
@@ -82,6 +86,11 @@ public class Liftover {
 			samu.setVerbose(true);
 			samu.processFile(samFile, outFile);
 			
+		} else if (config.contains("xml")) {
+			File xmlFile = config.getFile("xml");
+			ChadoXMLUpdater xmlu = new ChadoXMLUpdater(mappingData);
+			xmlu.setVerbose(true);
+			xmlu.processFile(xmlFile, outFile);
 		}
 		
 	}

@@ -1,0 +1,60 @@
+<chadoxml>
+                <dbxref id="dbxref_5">
+                    <accession>grow</accession>
+                    <version></version>
+                    <db_id>
+                        <db id="db_12">
+                            <name>MO</name>
+                            <url>http://www.berkeleybop.org/ontologies/obo-all/mged/mged.obo</url>
+                            <description>OBO</description>
+                        </db>
+                    </db_id>
+                </dbxref>
+                    <dbxref id="dbxref_3091">
+                        <accession>OntologyEntry</accession>
+                        <version></version>
+                        <db_id>db_12</db_id>
+                    </dbxref>
+                    <organism id="organism_1">
+                        <genus>Caenorhabditis</genus>
+                        <species>elegans</species>
+                    </organism>
+            <feature id="feature_6048">
+                <name>abi3100_ce3_20070626.A08_ce3.trans.8888446_070626.r</name>
+                <uniquename>2131354331</uniquename>
+                <residues></residues>
+                <timeaccessioned>Sep 30 2008  3:26PM</timeaccessioned>
+                <is_analysis>0</is_analysis>
+                <type_id>cvterm_17</type_id>
+                <organism_id>organism_1</organism_id>
+                <dbxref_id>dbxref_2070</dbxref_id>
+                <feature_dbxref>
+                    <dbxref_id>dbxref_2070</dbxref_id>
+                </feature_dbxref>
+            </feature>
+            <featureloc>
+                <feature_id>feature_1</feature_id>
+                <fmin>0</fmin>
+                <fmax>1248</fmax>
+                <strand>0</strand>
+            </featureloc>
+            <featureloc>
+                <feature_id>feature_6048</feature_id>
+                <fmin>13972469</fmin>
+                <fmax>13972578</fmax>
+                <strand>-1</strand>
+                <srcfeature_id>feature_1270</srcfeature_id>
+            </featureloc>
+            <featureprop>
+                <feature_id>feature_2347</feature_id>
+                <value>Confirmed</value>
+                <rank>0</rank>
+                <type_id>cvterm_26</type_id>
+            </featureprop>
+            <feature_relationship>
+                <rank>0</rank>
+                <subject_id>feature_6710</subject_id>
+                <object_id>feature_2347</object_id>
+                <type_id>cvterm_28</type_id>
+            </feature_relationship>
+</chadoxml>
