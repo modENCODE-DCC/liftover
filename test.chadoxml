@@ -19,6 +19,10 @@
                         <genus>Caenorhabditis</genus>
                         <species>elegans</species>
                     </organism>
+            <feature id="feature_1270">
+            	<name>II</name>
+            	<uniquename>II</uniquename>
+            </feature>
             <feature id="feature_6048">
                 <name>abi3100_ce3_20070626.A08_ce3.trans.8888446_070626.r</name>
                 <uniquename>2131354331</uniquename>

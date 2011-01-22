@@ -77,6 +77,10 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 									throw new MappingException("Couldn't find feature ID for chromosome " + chr);
 								}
 							}
+							if (!srcFeatures.containsValue("")) {
+								// We've found them all
+								break;
+							}
 						}
 						inType = null;
 						collectedLines = "";
@@ -214,13 +218,15 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 		
 		public String toString() {
 			String out = "";
-			if (this.changed && isVerbose()) {
-				out += "<!--\n" + this.originalFeature.toString() + "-->\n";
-				if (dropped)
-					return out;
-			} else if (isVerbose()) {
-				if (this.originalFeature.start != this.start || this.originalFeature.end != this.end) {
-					out += "   <!-- this featureloc is shifted right or left, but not changed internally -->\n";
+			if (this.originalFeature != null) {
+				if (this.changed && isVerbose()) {
+					out += "<!--\n" + this.originalFeature.toString() + "-->\n";
+					if (dropped)
+						return out;
+				} else if (isVerbose()) {
+					if (this.originalFeature.start != this.start || this.originalFeature.end != this.end) {
+						out += "   <!-- this featureloc is shifted right or left, but not changed internally -->\n";
+					}
 				}
 			}
 			out += "  <feature_id>" + this.featureId + "</feature_id>\n";
