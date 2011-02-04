@@ -1,0 +1,164 @@
+<!-- source chadoxml file -->
+
+<chadoxml>
+  <feature id="feature_1270">
+    <name>II</name>
+  </feature>
+  <feature id="feature_IV">
+    <name>IV</name>
+  </feature>
+
+  <feature id="feature_ten">
+    <name>X</name>
+  </feature>
+    <feature id="feature_3">
+    <name>III</name>
+  </feature>
+    <feature id="feature_6048">
+    <name>abi3100_ce3_20070626.A08_ce3.trans.8888446_070626.r</name>
+  </feature>
+    <feature id="feature_2">
+    <name>Another Feature Name</name>
+  </feature>
+
+<!-- FEATURE LOCS ----->
+<!-- non-overlapping MMS -->
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>12344</fmin>
+  <fmax>12355</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16422614</fmin>
+  <fmax>16422620</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16424500</fmin>
+  <fmax>16424503</fmax>
+  <strand>0</strand>
+</featureloc>
+
+
+<!-- feature > mismatch on both ends -->
+
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16426789</fmin>
+  <fmax>16426836</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_ten</srcfeature_id>
+  <fmin>15981149</fmin>
+  <fmax>15981160</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16449589</fmin>
+  <fmax>16449598</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16440863</fmin>
+  <fmax>16440944</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<!-- mismatch > feature on both ends --->
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16440899</fmin>
+  <fmax>16440920</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16436332</fmin>
+  <fmax>16436343</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16436332</fmin>
+  <fmax>16436334</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<!-- mismatch overlaps left end of feature -->
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16426799</fmin>
+  <fmax>16426835</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16424049</fmin>
+  <fmax>16424061</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16422608</fmin>
+  <fmax>16422618</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<!-- mismatch overlaps right end of feature -->
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16436329</fmin>
+  <fmax>16436335</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16440859</fmin>
+  <fmax>16440869</fmax>
+  <strand>0</strand>
+</featureloc>
+
+<featureloc>
+  <feature_id>feature_2</feature_id>
+  <srcfeature_id>feature_IV</srcfeature_id>
+  <fmin>16422604</fmin>
+  <fmax>16422609</fmax>
+  <strand>0</strand>
+</featureloc>
+
+</chadoxml>

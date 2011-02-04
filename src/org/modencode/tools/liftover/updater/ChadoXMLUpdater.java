@@ -120,7 +120,7 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 		inType = null;
 		collectedLines = "";
 		Pattern xmlTagPattern = Pattern.compile("<([^ >]+)[^>]*>([^<]*)</\\1>", Pattern.DOTALL);
-		
+
 		Pattern featureLocContentsPattern = Pattern.compile("<featureloc[^>]*>(.*?)</featureloc>", Pattern.DOTALL);
 		try {
 			while ((line = fileReader.readLine()) != null) {
@@ -143,7 +143,7 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 							if (srcFeatures.containsKey(info.get("srcfeature_id"))) {
 								// TODO: Build a feature object, map it, and replace collectedLines
 								if (info.get("fmin") == null || info.get("fmax") == null) { continue; } // Skip if not located
-								if (info.get("strand").equals("0") || info.get("strand") == null) {
+								if (info.get("strand") == null || info.get("strand").equals("0")) {
 									info.put("strand", ".");
 								} else if (Integer.parseInt(info.get("strand")) < 0) {
 									info.put("strand", "-");
@@ -154,8 +154,8 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 										info.get("feature_id"),
 										info.get("srcfeature_id"),
 										srcFeatures.get(info.get("srcfeature_id")),
-										Integer.parseInt(info.get("fmin")),
-										Integer.parseInt(info.get("fmax")),
+										Integer.parseInt(info.get("fmin").trim()),
+										Integer.parseInt(info.get("fmax").trim()),
 										info.get("strand"),
 										info.get("phase") == null ? null : Integer.parseInt(info.get("phase"))
 										);
@@ -221,7 +221,7 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 			if (this.originalFeature != null) {
 				if (this.changed && isVerbose()) {
 					out += "<!--\n" + this.originalFeature.toString() + "-->\n";
-					if (dropped)
+					if (indeterminate || dropped)
 						return out;
 				} else if (isVerbose()) {
 					if (this.originalFeature.start != this.start || this.originalFeature.end != this.end) {
