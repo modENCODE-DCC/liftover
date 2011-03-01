@@ -4,9 +4,12 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.lang.StringBuilder;
 import java.util.Arrays;
@@ -15,6 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
@@ -101,42 +106,66 @@ public class GFFUpdater extends AbstractUpdater {
 		long currPos ;
 		char currChar;
 		String lineToCheck;
-		StringBuilder currLine = new StringBuilder();	
-		RandomAccessFile gff;
-		try {
-			gff = new RandomAccessFile(gffFile, "r");	
-		} catch (FileNotFoundException e){
-			System.err.println("Couldn't open " + gffFile + " for reading.");
-			throw new MappingException("Couldn't open " + gffFile, e);
-		}
-		
-		try {
-			// Iterate backwards through the file
-			for(currPos = gffFile.length() - 1; currPos >= 0; currPos--){
-				gff.seek(currPos);
-				currChar = (char)gff.readByte();
-				// Process line if it's an end-of-line char
-				if(currChar == 13 || currChar == 10){
-					lineToCheck = currLine.toString();
-					currLine.setLength(0);
-					// Ignore whitespace or comment (#) lines
-					if(lineToCheck.matches("\\s*") || lineToCheck.matches("\\s*#.*")){
-							
-					} else {
-						// If it has a tab, it's regular GFF content
-						if(lineToCheck.matches(".*\t.*")) {
+		StringBuilder currLine = new StringBuilder();
+		// Try to open as GZip data
+		GZIPInputStream gzStream = getGZIPInputStream(gffFile);
+		if (gzStream != null) {
+			BufferedReader r = new BufferedReader(new InputStreamReader(gzStream));
+			try {
+				while ((lineToCheck = r.readLine()) != null) {
+					if (lineToCheck.length() > 0 && lineToCheck.charAt(0) == '>') {
+						r.close();
+						return true;
+					}
+				}
+				r.close();
+				return false;
+			} catch (IOException e) {
+				throw new MappingException("Couldn't read " + gffFile + " as GZip", e);
+			}
+		} else {
+			// Open as regular GFF
+			RandomAccessFile gff;
+			try {
+				gff = new RandomAccessFile(gffFile, "r");	
+			} catch (FileNotFoundException e){
+				System.err.println("Couldn't open " + gffFile + " for reading.");
+				throw new MappingException("Couldn't open " + gffFile, e);
+			}
+
+			try {
+				// We can get a little more clever here: iterate backwards through the file and look for the FASTA there
+				for(currPos = gffFile.length() - 1; currPos >= 0; currPos--){
+					gff.seek(currPos);
+					currChar = (char)gff.readByte();
+					// Process line if it's an end-of-line char
+					if(currChar == 13 || currChar == 10){
+						lineToCheck = currLine.toString();
+						currLine.setLength(0);
+						// Ignore whitespace or comment (#) lines
+						if (lineToCheck.matches(".*\t.*")) {
+							// If it has a tab, it's regular GFF and we shouldn't keep looking for FASTA
+							gff.close();
 							return false;
 						}
-						return true; // No tabs --- it's a FASTA line
+						if(lineToCheck.matches("^>.*")) {
+							// If it starts with a ">", then there's at least some FASTA
+							gff.close();
+							return true;
+						}
+					} else {
+						// Otherwise, continue building the line
+						currLine.insert(0, currChar);
 					}
-				} else {
-					// Otherwise, continue building the line
-					currLine.insert(0, currChar);
 				}
+			} catch(Exception e) {
+				throw new MappingException("Error when checking for FASTA data: " + e.toString());
 			}
-		} catch(Exception e) {
-			throw new MappingException("Error when checking for FASTA data: " + e.toString());
+			try {
+				gff.close();
+			} catch (IOException e) {}
 		}
+
 		// We got to the beginning of the file!
 		System.err.println("Gff seems to be empty of content other than comments!");
 		return false;
@@ -146,14 +175,25 @@ public class GFFUpdater extends AbstractUpdater {
 		// First, read from the end of the file to see if it has any FASTA in it
 		System.out.println("Checking for FASTA data...");
 		Boolean hasFasta = this.fileHasFasta(gffFile);
-		if(hasFasta) {
+		if (hasFasta) {
 			System.out.println("Found FASTA data.");
+		} else {
+			System.out.println("No FASTA data found.");
 		}
 		
 		BufferedReader reader;
+		boolean isGZIP = false;
 		try {
-			FileReader fileReader = new FileReader(gffFile);
-			reader = new BufferedReader(fileReader);
+			GZIPInputStream gzStream = getGZIPInputStream(gffFile);
+			if (gzStream != null) {
+				InputStreamReader streamReader = new InputStreamReader(gzStream);
+				reader = new BufferedReader(streamReader);
+				isGZIP = true;
+				System.out.println("File is compressesed (GZIP), and percentage completion will be incorrect.");
+			} else {
+				FileReader fileReader = new FileReader(gffFile);
+				reader = new BufferedReader(fileReader);
+			}
 		} catch (FileNotFoundException e) {
 			System.err.println("Couldn't open " + gffFile + " for reading.");
 			throw new MappingException("Couldn't open " + gffFile, e);
@@ -161,8 +201,14 @@ public class GFFUpdater extends AbstractUpdater {
 
 		BufferedWriter writer;
 		try {
-			FileWriter fileWriter = new FileWriter(outFile);
-			writer = new BufferedWriter(fileWriter);
+			if (isGZIP) {
+				GZIPOutputStream gzStream = new GZIPOutputStream(new FileOutputStream(outFile));
+				OutputStreamWriter osw = new OutputStreamWriter(gzStream);
+				writer = new BufferedWriter(osw);
+			} else {
+				FileWriter fileWriter = new FileWriter(outFile);
+				writer = new BufferedWriter(fileWriter);
+			}
 		} catch (IOException e) {
 			System.err.println("Couldn't open " + outFile + " for writing.");
 			throw new MappingException("Couldn't open " + outFile + " for writing", e);
@@ -224,20 +270,24 @@ public class GFFUpdater extends AbstractUpdater {
 							GFFFeature currFeature = this.processLine(line);
 							// pull out start and end BEFORE updating the feature
 							// because it modifies itself
-							int orig_start = currFeature.getStart() ;
-							int orig_end = currFeature.getEnd() ;
-							writer.write(updateFeature(currFeature).toString());
-							String featureID = currFeature.getID();
-							if(hasFasta && featureID != ""){
-								fasta_updater.addID(
-													featureID, 
-													orig_start, 
-													orig_end,
-													currFeature.getChromosome(),
-													currFeature.getStart(),
-													currFeature.getEnd(),
-													currFeature.getDroppedOrIndeterminate()
-													);	
+							if (!currFeature.hasLocation()) {
+								writer.write(currFeature.toString());
+							} else {
+								int orig_start = currFeature.getStart() ;
+								int orig_end = currFeature.getEnd() ;
+								writer.write(updateFeature(currFeature).toString());
+								String featureID = currFeature.getID();
+								if(hasFasta && featureID != ""){
+									fasta_updater.addID(
+											featureID, 
+											orig_start, 
+											orig_end,
+											currFeature.getChromosome(),
+											currFeature.getStart(),
+											currFeature.getEnd(),
+											currFeature.getDroppedOrIndeterminate()
+									);	
+								}
 							}
 						}
 					}

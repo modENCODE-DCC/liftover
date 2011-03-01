@@ -3,6 +3,8 @@ package org.modencode.tools.liftover;
 import java.io.File;
 import java.util.List;
 
+import net.sf.samtools.SAMFileReader;
+
 import org.modencode.tools.liftover.updater.BEDUpdater;
 import org.modencode.tools.liftover.updater.ChadoXMLUpdater;
 import org.modencode.tools.liftover.updater.GFFUpdater;
@@ -11,6 +13,7 @@ import org.modencode.tools.liftover.updater.WIGUpdater;
 
 import com.martiansoftware.jsap.*;
 import com.martiansoftware.jsap.stringparsers.FileStringParser;
+import com.martiansoftware.jsap.stringparsers.StringStringParser;
 
 public class Liftover {
 
@@ -45,6 +48,9 @@ public class Liftover {
 						),
 						new FlaggedOption("release2", JSAP.INTEGER_PARSER, null, JSAP.REQUIRED, '2', "release2",
 								"The destination release number."
+						),
+						new FlaggedOption("sam-stringency", StringStringParser.getParser(), null, JSAP.NOT_REQUIRED, 'y', "sam-stringency",
+								"The SAM validation stringency; one of STRICT, LENIENT, or SILENT."
 						),
 				}
 		);
@@ -83,6 +89,12 @@ public class Liftover {
 			File samFile = config.getFile("sam");
 			
 			SAMUpdater samu = new SAMUpdater(mappingData);
+			
+			if (config.contains("sam-stringency")) {
+				SAMFileReader.ValidationStringency stringency = SAMFileReader.ValidationStringency.valueOf(config.getString("sam-stringency"));
+				samu.setValidationStringency(stringency);
+			}
+			
 			samu.setVerbose(true);
 			samu.processFile(samFile, outFile);
 			

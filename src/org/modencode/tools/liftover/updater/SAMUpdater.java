@@ -17,11 +17,17 @@ import net.sf.samtools.SAMSequenceDictionary;
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
 import org.modencode.tools.liftover.MappingException;
+import org.modencode.tools.liftover.io.SAMFileWriterFactoryCompressed;
 
 public class SAMUpdater extends AbstractUpdater {
 
+	SAMFileReader.ValidationStringency stringency = SAMFileReader.ValidationStringency.DEFAULT_STRINGENCY;
 	public SAMUpdater(List<MappingData> mappingData) {
 		super(mappingData);
+	}
+	
+	public void setValidationStringency(SAMFileReader.ValidationStringency stringency) {
+		this.stringency = stringency;
 	}
 	
 	public SAMFileHeader updateHeader(SAMFileHeader header) throws MappingException {
@@ -51,15 +57,25 @@ public class SAMUpdater extends AbstractUpdater {
 	public void processFile(File samFile, File outFile) throws MappingException {
 		SAMFileReader reader = new SAMFileReader(samFile);
 		
+		reader.setValidationStringency(stringency);
+		
 		SAMFileHeader header = reader.getFileHeader();
 		header = this.updateHeader(header);
-		SAMFileWriter writer = new SAMFileWriterFactory().makeSAMOrBAMWriter(header, true, outFile);
+		SAMFileWriter writer = new SAMFileWriterFactoryCompressed().makeSAMOrBAMWriter(header, true, outFile);
 		
-		for (SAMRecord r : reader) {
-			SAMFeature f = new SAMFeature(r);
-			f = (SAMFeature)this.updateFeature(f);
-			writer.addAlignment(r);
-		}	
+		try {
+			for (SAMRecord r : reader) {
+				SAMFeature f = new SAMFeature(r);
+				f = (SAMFeature)this.updateFeature(f);
+				writer.addAlignment(r);
+			}
+		} catch (net.sf.samtools.SAMFormatException e) {
+			// Okay, really can't parse this line
+			System.err.println("Can't process SAM line, closing SAM writer here.");
+			System.err.println("The error was:");
+			e.printStackTrace();
+			System.err.println("Continuing...");
+		}
 		writer.close();
 	}
 	@Override

@@ -1,6 +1,11 @@
 package org.modencode.tools.liftover.updater;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
@@ -20,6 +25,22 @@ public class AbstractUpdater {
 		if (progress % 10 == 0 && lastProgress != progress) {
 			lastProgress = progress; 
 			System.out.println("Completed " + progress + "%.");
+		}
+	}
+	
+	protected GZIPInputStream getGZIPInputStream(File gffFile) {
+		GZIPInputStream gzStream = null;
+		try {
+			gzStream = new GZIPInputStream(new BufferedInputStream(new FileInputStream(gffFile), 16384), 8192);
+			gzStream.read();
+			gzStream.close();
+			return new GZIPInputStream(new BufferedInputStream(new FileInputStream(gffFile), 16384), 8192);
+		} catch (IOException e) {
+			// Couldn't open as GZ
+			try {
+				if (gzStream != null) { gzStream.close(); }
+			} catch (IOException ignore) { }
+			return null;
 		}
 	}
 

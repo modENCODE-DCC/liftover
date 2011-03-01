@@ -42,4 +42,7 @@ public abstract class AbstractFeature {
 	public String getCommentPrefix(){
 		return "#liftover: " ;
 	}
+	public boolean hasLocation() {
+		return (this.start != null && this.end != null);
+	}
 }

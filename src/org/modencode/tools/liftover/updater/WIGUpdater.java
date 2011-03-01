@@ -4,10 +4,15 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.modencode.tools.liftover.AbstractFeature;
 import org.modencode.tools.liftover.MappingData;
@@ -32,9 +37,17 @@ public class WIGUpdater extends AbstractUpdater {
 
 	public void processFile(File wigFile, File outFile) throws MappingException {
 		BufferedReader reader;
+		boolean isGZIP = false;
 		try {
-			FileReader fileReader = new FileReader(wigFile);
-			reader = new BufferedReader(fileReader);
+			GZIPInputStream gzStream = getGZIPInputStream(wigFile);
+			if (gzStream != null) {
+				InputStreamReader streamReader = new InputStreamReader(gzStream);
+				reader = new BufferedReader(streamReader);
+				System.out.println("File is compressesed (GZIP), and percentage completion will be incorrect.");
+			} else {
+				FileReader fileReader = new FileReader(wigFile);
+				reader = new BufferedReader(fileReader);
+			}
 		} catch (FileNotFoundException e) {
 			System.err.println("Couldn't open " + wigFile + " for reading.");
 			throw new MappingException("Couldn't open " + wigFile, e);
@@ -42,8 +55,14 @@ public class WIGUpdater extends AbstractUpdater {
 
 		BufferedWriter writer;
 		try {
-			FileWriter fileWriter = new FileWriter(outFile);
-			writer = new BufferedWriter(fileWriter);
+			if (isGZIP) {
+				GZIPOutputStream gzStream = new GZIPOutputStream(new FileOutputStream(outFile));
+				OutputStreamWriter osw = new OutputStreamWriter(gzStream);
+				writer = new BufferedWriter(osw);
+			} else {
+				FileWriter fileWriter = new FileWriter(outFile);
+				writer = new BufferedWriter(fileWriter);
+			}
 		} catch (IOException e) {
 			System.err.println("Couldn't open " + outFile + " for writing.");
 			throw new MappingException("Couldn't open " + outFile + " for writing", e);
@@ -52,7 +71,13 @@ public class WIGUpdater extends AbstractUpdater {
 		try {
 			String line;
 			WiggleLineParser lineParser = null;
+			long fileSize =  wigFile.length();
+			long bytesProcessed = 0;
+
 			while ((line = reader.readLine()) != null) {
+				bytesProcessed += line.length()+1;
+				this.updateProgress(bytesProcessed/(double)fileSize);
+
 				if (line.matches("^\\s*$") || line.matches("^\\s*#.*")) {
 					writer.write(line); //Comment
 				} else {
@@ -63,6 +88,9 @@ public class WIGUpdater extends AbstractUpdater {
 
 						// Track header; parse then write original
 						String chr = getVarValue(fields, "chrom=");
+						if (chr != null) {
+							if (chr.startsWith("chr")) { chr = chr.substring(3); }
+						}
 						if (line.startsWith(WIGType.VARIABLE_STEP.toString())) {
 							String span = getVarValue(fields, "span=");
 							if (span == null) span = "1";
@@ -166,7 +194,9 @@ public class WIGUpdater extends AbstractUpdater {
 			String[] fields = line.split("\\s+");
 			Integer start = new Integer(Integer.parseInt(fields[1]));
 			Integer end = new Integer(Integer.parseInt(fields[2]));
-			WIGFeature f = new WIGFeature(WIGType.BED, fields[0], start, end, fields[3]);
+			String chr = fields[0];
+			if (chr.startsWith("chr")) { chr = chr.substring(3); }
+			WIGFeature f = new WIGFeature(WIGType.BED, chr, start, end, fields[3]);
 			
 			return (WIGFeature)updateFeature(f);
 		}
