@@ -10,7 +10,6 @@ import net.sf.samtools.CigarOperator;
 import net.sf.samtools.SAMFileHeader;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMFileWriter;
-import net.sf.samtools.SAMFileWriterFactory;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMSequenceDictionary;
 
@@ -303,6 +302,7 @@ public class SAMUpdater extends AbstractUpdater {
 					curOp = CigarOperator.DELETION;
 					curOpLength = length;
 				} else {
+					// TODO: Deal with insertion into string of IIIIIIIs in cigar.
 					throw new RuntimeException("Shouldn't be able to insert into I section of cigar!");
 				}
 				iRelativeToReference += length;
@@ -470,7 +470,7 @@ public class SAMUpdater extends AbstractUpdater {
 			return thisRecord.getReadUnmappedFlag();
 		}
 		public void setReadUnmapped(boolean isUnmapped) {
-			thisRecord.setReadUmappedFlag(isUnmapped);
+			thisRecord.setReadUnmappedFlag(isUnmapped);
 		}
 		public boolean isPaired() {
 			return thisRecord.getReadPairedFlag();

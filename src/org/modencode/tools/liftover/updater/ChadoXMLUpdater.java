@@ -140,7 +140,7 @@ public class ChadoXMLUpdater extends AbstractUpdater {
 								}
 							}
 							if (srcFeatures.containsKey(info.get("srcfeature_id"))) {
-								// TODO: Build a feature object, map it, and replace collectedLines
+								// Build a feature object, map it, and replace collectedLines
 								if (info.get("fmin") == null || info.get("fmax") == null) { continue; } // Skip if not located
 								if (info.get("strand") == null || info.get("strand").equals("0")) {
 									info.put("strand", ".");
