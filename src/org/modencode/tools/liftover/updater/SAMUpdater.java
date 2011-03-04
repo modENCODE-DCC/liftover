@@ -283,10 +283,12 @@ public class SAMUpdater extends AbstractUpdater {
 		CigarOperator curOp = CigarOperator.characterToEnum(extendedCigar.charAt(0));
 		curOpLength = 0;
 		for (int i = 0; i < extendedCigar.length(); i++) {
-			if (curOp != CigarOperator.INSERTION) { iRelativeToReference++; }
-			if (curOp == CigarOperator.characterToEnum(extendedCigar.charAt(i)))
+			if (curOp != CigarOperator.INSERTION && curOp != CigarOperator.SOFT_CLIP && curOp != CigarOperator.HARD_CLIP) {
+				iRelativeToReference++;
+			}
+			if (curOp == CigarOperator.characterToEnum(extendedCigar.charAt(i))) {
 				curOpLength++;
-			else {
+			} else {
 				newCigar.add(new CigarElement(curOpLength, curOp));
 				curOpLength = 1;
 				curOp = CigarOperator.characterToEnum(extendedCigar.charAt(i));
@@ -302,8 +304,7 @@ public class SAMUpdater extends AbstractUpdater {
 					curOp = CigarOperator.DELETION;
 					curOpLength = length;
 				} else {
-					// TODO: Deal with insertion into string of IIIIIIIs in cigar.
-					throw new RuntimeException("Shouldn't be able to insert into I section of cigar!");
+					throw new RuntimeException("Shouldn't be able to insert into I section " + curOp + " of cigar!");
 				}
 				iRelativeToReference += length;
 			}
