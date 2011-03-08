@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.modencode.tools.liftover.Liftover;
 import org.modencode.tools.liftover.MappingException;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import static org.junit.Assert.* ;

@@ -128,7 +128,7 @@ public class SAMUpdater extends AbstractUpdater {
 					if (f.isPaired() && !f.getMateUnmapped()) {
 						if (f.getMateChromosome() != orig_ref_seq) {
 							// TODO: Deal with remapping mates on different chromosomes
-							throw new RuntimeException("Can't yet deal with remapping mate on another chromosome");
+							throw new RuntimeException("Can't yet deal with remapping mate on another chromosome: " + f.getMateChromosome() + " != " + orig_ref_seq);
 						} else {
 							if (f.getMateStart() >= mm.previousMismatch.end) {
 								// Mate start after any changes
@@ -283,7 +283,7 @@ public class SAMUpdater extends AbstractUpdater {
 		CigarOperator curOp = CigarOperator.characterToEnum(extendedCigar.charAt(0));
 		curOpLength = 0;
 		for (int i = 0; i < extendedCigar.length(); i++) {
-			if (curOp != CigarOperator.INSERTION && curOp != CigarOperator.SOFT_CLIP && curOp != CigarOperator.HARD_CLIP) {
+			if (curOp != CigarOperator.INSERTION && curOp != CigarOperator.SOFT_CLIP) {
 				iRelativeToReference++;
 			}
 			if (curOp == CigarOperator.characterToEnum(extendedCigar.charAt(i))) {
@@ -303,8 +303,22 @@ public class SAMUpdater extends AbstractUpdater {
 					newCigar.add(new CigarElement(curOpLength, curOp));
 					curOp = CigarOperator.DELETION;
 					curOpLength = length;
+				} else if (curOp == CigarOperator.INSERTION || curOp == CigarOperator.SOFT_CLIP || curOp == CigarOperator.HARD_CLIP) {
+					// Scan to the end of the Is.
+					while (i < extendedCigar.length() && CigarOperator.characterToEnum(extendedCigar.charAt(++i)) == curOp) {
+						curOpLength++;
+					}
+					// Attach the insertion and then start a deletion
+					if (i == extendedCigar.length() && (curOp == CigarOperator.SOFT_CLIP || curOp == CigarOperator.HARD_CLIP)) {
+						newCigar.add(new CigarElement(length, CigarOperator.DELETION));
+					} else {
+						newCigar.add(new CigarElement(curOpLength, curOp));
+						curOp = CigarOperator.DELETION;
+						curOpLength = length;
+					}
+					i--;
 				} else {
-					throw new RuntimeException("Shouldn't be able to insert into I section " + curOp + " of cigar!");
+					throw new RuntimeException("Shouldn't be able to insert into " + curOp + " section of cigar: " + cigar.toString() + "!");
 				}
 				iRelativeToReference += length;
 			}

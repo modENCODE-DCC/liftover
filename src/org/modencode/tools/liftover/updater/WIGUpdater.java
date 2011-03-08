@@ -109,7 +109,7 @@ public class WIGUpdater extends AbstractUpdater {
 						} else {
 							if (lineParser == null) {
 								System.err.println("Wiggle parser unsure of type, trying to detect from " + line);
-								if (line.matches("\\S+\\t\\d+\\t\\d+\\t-?\\d.*")) {
+								if (line.matches("\\S+\\t\\d+\\t\\d+\\t(-?\\d.*?|$)")) {
 									System.err.println("  Detected BED format.");
 									lineParser = new BEDParser();
 								}
@@ -196,7 +196,8 @@ public class WIGUpdater extends AbstractUpdater {
 			Integer end = new Integer(Integer.parseInt(fields[2]));
 			String chr = fields[0];
 			if (chr.startsWith("chr")) { chr = chr.substring(3); }
-			WIGFeature f = new WIGFeature(WIGType.BED, chr, start, end, fields[3]);
+			String score = (fields.length < 4 || fields[3] == null) ? "" : fields[3];
+			WIGFeature f = new WIGFeature(WIGType.BED, chr, start, end, score);
 			
 			return (WIGFeature)updateFeature(f);
 		}

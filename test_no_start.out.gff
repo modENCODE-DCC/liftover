@@ -1,0 +1,6 @@
+##gff-version 3
+##genome-build WormBase WS220
+I	mid-L2_20dC_14hrs_post-L1	intron	4359	5194	0.00	-	.	ID=intron_I_4359_5194_-_wb170;prediction_status=Confirmed
+mid-L2_20dC_14hrs_post-L1_bundle_of_reads_supporting_intron_I_4359_5194_-_wb170	mid-L2_20dC_14hrs_post-L1	overlapping_EST_set	.	.	0.00	.	.	ID=mid-L2_20dC_14hrs_post-L1_bundle_of_reads_supporting_intron_I_4359_5194_-_wb170;Parent=intron_I_4359_5194_-_wb170;parental_relationship=complete_evidence_for_feature/intron_I_4359_5194_-_wb170;strands_confirmed=BOTH;reads=16;overlap=14;fdr=0.00;prediction_status=Confirmed
+I	mid-L2_20dC_14hrs_post-L1	intron	5297	6036	0.00	-	.	ID=intron_I_5297_6036_-_wb170;prediction_status=Confirmed
+mid-L2_20dC_14hrs_post-L1_bundle_of_reads_supporting_intron_I_5297_6036_-_wb170	mid-L2_20dC_14hrs_post-L1	overlapping_EST_set	.	.	0.00	.	.	ID=mid-L2_20dC_14hrs_post-L1_bundle_of_reads_supporting_intron_I_5297_6036_-_wb170;Parent=intron_I_5297_6036_-_wb170;parental_relationship=complete_evidence_for_feature/intron_I_5297_6036_-_wb170;strands_confirmed=BOTH;reads=27;overlap=18;fdr=0.00;prediction_status=Confirmed

@@ -1,50 +1,31 @@
-##genome-build WormBase WS76
+##genome-build WormBase WS220
 # To be lifted to WS76
 
 # Non-overlapping mismatches
 IV	Test	Testing	12345	12355	.	.	.	ID=mm-fully-after; no change
-IV	Test	Testing	16422615	16422620	.	.	.	ID=mm-before-constant; no change
-IV	Test	Testing	16424504	16424506	.	.	.	ID=mm-before-increases; shifted
+IV	Test	Testing	16422623	16422628	.	.	.	ID=mm-before-constant; no change
+IV	Test	Testing	16424509	16424511	.	.	.	ID=mm-before-increases; shifted
 
 # Feature > mismatch on both ends
-#liftover: The following feature's internal structure changed:
-#liftover: IV	Test	Testing	16426790	16426836	.	.	.	ID=mm-in-remsome
-IV	Test	Testing	16426794	16426838	.	.	.	ID=mm-in-remsome
-#liftover: The following feature's internal structure changed:
-#liftover: X	Test	Testing	15981150	15981160	.	.	.	ID=mm-in-noneleft
-X	Test	Testing	15981150	15981159	.	.	.	ID=mm-in-noneleft
-#liftover: The following feature's internal structure changed:
-#liftover: IV	Test	Testing	16449590	16449598	.	.	.	ID=mm-in-added
-IV	Test	Testing	16449622	16449631	.	.	.	ID=mm-in-added
-#liftover: The following feature's internal structure changed:
-#liftover: IV	Test	Testing	16440864	16440944	.	.	.	ID=mm-in-addsome
-IV	Test	Testing	16440888	16440976	.	.	.	ID=mm-in-addsome
+IV	Test	Testing	16426798	16426844	.	.	.	ID=mm-in-remsome
+X	Test	Testing	15981160	15981170	.	.	.	ID=mm-in-noneleft
+IV	Test	Testing	16449598	16449606	.	.	.	ID=mm-in-added
+IV	Test	Testing	16440872	16440952	.	.	.	ID=mm-in-addsome
 
 # Mismatch > Feature on both ends - mark all as indeterminate
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16440900	16440920	.	.	.	ID=mm-around-adding
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16436333	16436343	.	.	.	ID=mm-around-someleft
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16436332	16436334	.	.	.	ID=mm-around-allgone
+IV	Test	Testing	16440908	16440928	.	.	.	ID=mm-around-adding
+IV	Test	Testing	16436341	16436351	.	.	.	ID=mm-around-someleft
+IV	Test	Testing	16436340	16436342	.	.	.	ID=mm-around-allgone
 
 # Mismatch overlaps left end of feature ; mismatch starting length > 0
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16426800	16426835	.	.	.	ID=mm-lol-remsome
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16424050	16424061	.	.	.	ID=mm-lol-addsome
-#liftover: The following feature's internal structure changed:
-#liftover: IV	Test	Testing	16422609	16422618	.	.	.	ID=mm-lol-change
-IV	Test	Testing	16422609	16422618	.	.	.	ID=mm-lol-change
+IV	Test	Testing	16426808	16426843	.	.	.	ID=mm-lol-remsome
+IV	Test	Testing	16424058	16424069	.	.	.	ID=mm-lol-addsome
+IV	Test	Testing	16422617	16422626	.	.	.	ID=mm-lol-change
 
 # Mismatch overlaps right end of feature ; mismatch starting length > 0
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16436330	16436335	.	.	.	ID=mm-rol-remove
-#liftover: Following feature dropped due to indeterminate length after lifting
-#liftover: IV	Test	Testing	16440860	16440869	.	.	.	ID=mm-rol-add
-#liftover: The following feature's internal structure changed:
-#liftover: IV	Test	Testing	16422605	16422609	.	.	.	ID=mm-rol-change
-IV	Test	Testing	16422605	16422609	.	.	.	ID=mm-rol-change
+IV	Test	Testing	16436338	16436343	.	.	.	ID=mm-rol-remove
+IV	Test	Testing	16440868	16440877	.	.	.	ID=mm-rol-add
+IV	Test	Testing	16422613	16422617	.	.	.	ID=mm-rol-change
 
 ##FASTA
 >mm-fully-after feature : no change
@@ -53,56 +34,30 @@ aaaaaAAAAAa
 cccccc
 >mm-before-increases : no change
 acg
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-around-adding : indeterminate
-#liftover: aaaaacccccGGGGGtttttU
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-around-allgone : indeterminate
-#liftover: CGA
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-around-someleft : indeterminate
-#liftover: ATUATUATUC
-#liftover: The following feature's internal structure changed:
-#liftover: >mm-in-remsome : 47 bases. should result in 45 bases of x: the 3 beginning ok, and the 2 end.
-#liftover: AGGTTTTTtttttcccccCCCCCAAAAAaaaaagggggGGGGGUUUU
+>mm-around-adding : indeterminate
+aaaaacccccGGGGGtttttU
+>mm-around-allgone : indeterminate
+CGA
+>mm-around-someleft : indeterminate
+ATUATUATUC
 >mm-in-remsome : 47 bases. should result in 45 bases of x: the 3 beginning ok, and the 2 end.
-AGGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXUU
-#liftover: The following feature's internal structure changed:
-#liftover: >mm-in-noneleft : entirely a's
-#liftover: aaaaaGaaaaa
+AGGTTTTTtttttcccccCCCCCAAAAAaaaaagggggGGGGGUUUU
 >mm-in-noneleft : entirely a's
-aaaaaaaaaa
-#liftover: The following feature's internal structure changed:
-#liftover: >mm-in-added : one base added between g's and t's
-#liftover: ggggggttt
+aaaaaGaaaaa
 >mm-in-added : one base added between g's and t's
-ggggggXttt
-#liftover: The following feature's internal structure changed:
-#liftover: >mm-in-addsome : 8 bases added near the end 
-#liftover: Gaaaaacccccaaaaacccccaaaaacccccaaaaacccccaaaaacccccaaaaacccccaaaaacccc
-#liftover: caaaaaccccc
+ggggggttt
 >mm-in-addsome : 8 bases added near the end 
 Gaaaaacccccaaaaacccccaaaaacccccaaaaacccccaaaaacccccaaaaacccccaaaaacccc
-caaaaacXXXXXXXXcccc
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-lol-remsome
-#liftover: aaaaaaccccccttttttgggggguuuuuuATATAT
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-lol-addsome
-#liftover: aaaaatttttgg
-#liftover: The following feature's internal structure changed:
-#liftover: >mm-lol-change
-#liftover: agtgaagtga
+caaaaaccccc
+>mm-lol-remsome
+aaaaaaccccccttttttgggggguuuuuuATATAT
+>mm-lol-addsome
+aaaaatttttgg
 >mm-lol-change
-XXtgaagtga
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-rol-remove
-#liftover: agtagt
-#liftover: Following FASTA feature dropped due to indeterminate content:
-#liftover: >mm-rol-add
-#liftover: atataGCGCG
-#liftover: The following feature's internal structure changed:
-#liftover: >mm-rol-change
-#liftover: acGTu
+agtgaagtga
+>mm-rol-remove
+agtagt
+>mm-rol-add
+atataGCGCG
 >mm-rol-change
-acGXX
+acGTu
