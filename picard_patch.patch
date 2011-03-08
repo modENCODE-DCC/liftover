@@ -1,0 +1,168 @@
+### Eclipse Workspace Patch 1.0
+#P picard
+Index: src/java/net/sf/samtools/SAMFileWriterFactory.java
+===================================================================
+--- src/java/net/sf/samtools/SAMFileWriterFactory.java	(revision 740)
++++ src/java/net/sf/samtools/SAMFileWriterFactory.java	(working copy)
+@@ -41,10 +41,10 @@
+     private static boolean DefaultCreateIndexWhileWriting = false;
+     private boolean createIndex = DefaultCreateIndexWhileWriting ;
+     private static boolean defaultCreateMd5File = false;
+-    private boolean createMd5File = defaultCreateMd5File;
++    protected boolean createMd5File = defaultCreateMd5File;
+ 
+ 
+-    private Integer maxRecordsInRam;
++    protected Integer maxRecordsInRam;
+ 
+     /**
+      * Sets the default for whether to create md5Files for BAM files this factory.
+Index: src/java/net/sf/samtools/SAMTextReader.java
+===================================================================
+--- src/java/net/sf/samtools/SAMTextReader.java	(revision 740)
++++ src/java/net/sf/samtools/SAMTextReader.java	(working copy)
+@@ -332,7 +332,14 @@
+                 }
+ 
+             final int pos = parseInt(mFields[POS_COL], "POS");
+-            final int mapq = parseInt(mFields[MAPQ_COL], "MAPQ");
++            int mapq;
++            try {
++            	mapq = parseInt(mFields[MAPQ_COL], "MAPQ");
++            } catch (SAMFormatException e) {
++            	// Since some submissions seem to have put an evalue here
++            	reportErrorParsingLine("Bad MAPQ value in column " + MAPQ_COL + "; setting to 255");
++            	mapq = 255;
++            }
+             final String cigar = mFields[CIGAR_COL];
+             if (!SAMRecord.NO_ALIGNMENT_REFERENCE_NAME.equals(samRecord.getReferenceName())) {
+                 if (pos == 0) {
+@@ -435,15 +442,39 @@
+ 
+         private void parseTag(final SAMRecord samRecord, final String tag) {
+             Map.Entry<String, Object> entry = null;
++            
+             try {
+                 entry = tagCodec.decode(tag);
+             } catch (SAMFormatException e) {
+-                reportErrorParsingLine(e);
++            	if (e.getMessage() == "Tag of type i should have signed decimal value" && (entry = parseIntAsFloat(tag)) != null) {
++            		// Parsed as a float instead
++            	} else {
++	            	// If we can split on spaces, maybe it's just spaces not tabs
++	            	final String[] splitTags = new String[10000];
++	            	final int numTags = StringUtil.split(tag, splitTags, ' ');
++	            	if (numTags > 1) {
++	            		reportErrorParsingLine("Tag values should be separated by tabs, not spaces");
++	            		for (int i = 0; i < numTags; i++) {
++	            			parseTag(samRecord, splitTags[i]);
++	            		}
++	            	} else {
++	            		// Nope, just badly formatted
++	                    reportErrorParsingLine(e);
++	            	}
++            	}
+             }
+             if (entry != null) {
+                 samRecord.setAttribute(entry.getKey(), entry.getValue());
+             }
+         }
+     }
++    private Map.Entry<String, Object> parseIntAsFloat(String tag) throws SAMFormatException {
++    	String[] tagParts = tag.split(":");
++    	if (tagParts.length == 3) {
++    		tagParts[1] = "f";
++    		return tagCodec.decode(tagParts[0] + ":" + tagParts[1] + ":" + tagParts[2]);
++    	}
++    	return null;
++    }
+ }
+ 
+Index: src/java/net/sf/picard/util/ProcessExecutor.java
+===================================================================
+--- src/java/net/sf/picard/util/ProcessExecutor.java	(revision 740)
++++ src/java/net/sf/picard/util/ProcessExecutor.java	(working copy)
+@@ -41,7 +41,6 @@
+ public class ProcessExecutor {
+     private static final Log log = Log.getInstance(ProcessExecutor.class);
+     private static final ExecutorService executorService = Executors.newCachedThreadPool(new ThreadFactory() {
+-        @Override
+         public Thread newThread(final Runnable r) {
+             return new Thread(r, "ProcessExecutor Thread");
+         }
+@@ -139,7 +138,6 @@
+             reader = new BufferedReader(new InputStreamReader(stream));
+         }
+ 
+-        @Override
+         public void run() {
+             try {
+                 String line;
+Index: src/java/net/sf/samtools/SAMFileWriterImpl.java
+===================================================================
+--- src/java/net/sf/samtools/SAMFileWriterImpl.java	(revision 740)
++++ src/java/net/sf/samtools/SAMFileWriterImpl.java	(working copy)
+@@ -92,7 +92,7 @@
+      * before spilling to disk.  Must be called before setHeader().
+      * @param maxRecordsInRam
+      */
+-    void setMaxRecordsInRam(final int maxRecordsInRam) {
++    public void setMaxRecordsInRam(final int maxRecordsInRam) {
+         if (this.header != null) {
+             throw new IllegalStateException("setMaxRecordsInRam must be called before setHeader()");
+         }
+Index: src/java/net/sf/samtools/SAMTextWriter.java
+===================================================================
+--- src/java/net/sf/samtools/SAMTextWriter.java	(revision 740)
++++ src/java/net/sf/samtools/SAMTextWriter.java	(working copy)
+@@ -31,7 +31,7 @@
+ /**
+  * Writer for text-format SAM files.
+  */
+-class SAMTextWriter extends SAMFileWriterImpl {
++public class SAMTextWriter extends SAMFileWriterImpl {
+     private static final String FIELD_SEPARATOR = "\t";
+ 
+     private final Writer out;
+@@ -44,7 +44,7 @@
+      * Prepare to write SAM text file.
+      * @param file Where to write the output.
+      */
+-    SAMTextWriter(final File file) {
++    public SAMTextWriter(final File file) {
+         try {
+             this.file = file;
+             this.out = new AsciiWriter(new FileOutputStream(file));
+@@ -57,7 +57,7 @@
+      * Constructs a SAMTextWriter for outputting to a stream instead of to a file.
+      * @param stream Need not be buffered because this class provides buffering. 
+      */
+-    SAMTextWriter(final OutputStream stream) {
++    public SAMTextWriter(final OutputStream stream) {
+         this.file = null;
+         this.out = new AsciiWriter(stream);
+     }
+Index: src/java/net/sf/picard/filter/WholeReadClippedFilter.java
+===================================================================
+--- src/java/net/sf/picard/filter/WholeReadClippedFilter.java	(revision 740)
++++ src/java/net/sf/picard/filter/WholeReadClippedFilter.java	(working copy)
+@@ -41,7 +41,6 @@
+      * @return true if the SAMRecord matches the filter, and should be filtered out,
+      *         otherwise false
+      */
+-    @Override
+     public boolean filterOut(final SAMRecord record) {
+         return record.getAttribute(ReservedTagConstants.XT) != null
+                 && (Integer)record.getAttribute(ReservedTagConstants.XT) == 1;
+Index: src/java/net/sf/picard/util/IntervalTree.java
+===================================================================
+--- src/java/net/sf/picard/util/IntervalTree.java	(revision 740)
++++ src/java/net/sf/picard/util/IntervalTree.java	(working copy)
+@@ -64,7 +64,6 @@
+      * @param value The associated value.
+      * @return The old value associated with that interval, or the sentinel.
+      */
+-    @SuppressWarnings("null")
+     public V put( final int start, final int end, final V value )
+     {
+         if ( start > end )
